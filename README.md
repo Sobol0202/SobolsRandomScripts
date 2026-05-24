@@ -1,0 +1,1 @@
+In diesem Repo liegen Scripte, die ich entweder von irgendwo gesichert habe, oder die zwar von mir geschrieben wurden, aber keinem festen Projekt zugehörig sind. Primär sind es Resourcen, die ich vermutlich maximal 1x gebraucht habe und die ich einfach nicht löschen will, da ich nicht weiß, wann ich sie nochmal brauche.
