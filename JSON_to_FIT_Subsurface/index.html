@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Scuba JSON → FIT</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <p class="eyebrow">Offline im Browser</p>
+      <h1>Scuba JSON → FIT</h1>
+      <p class="lead">Konvertiert Tauch-JSON-Dateien mit <code>DeviceLog</code> in eine FIT-Aktivität für den Import in Subsurface.</p>
+    </header>
+
+    <section class="card">
+      <label id="dropzone" class="dropzone" for="fileInput">
+        <input id="fileInput" type="file" accept="application/json,.json" hidden />
+        <span class="drop-title">JSON-Datei hier ablegen</span>
+        <span class="drop-sub">oder klicken und Datei auswählen</span>
+      </label>
+
+      <div class="grid settings">
+        <label>
+          <span>Sauerstoffanteil</span>
+          <div class="input-suffix"><input id="oxygen" type="number" min="5" max="100" step="1" value="21" /><span>%</span></div>
+        </label>
+        <label>
+          <span>Heliumanteil</span>
+          <div class="input-suffix"><input id="helium" type="number" min="0" max="95" step="1" value="0" /><span>%</span></div>
+        </label>
+        <label>
+          <span>Profil-Abtastung</span>
+          <select id="sampleRate">
+            <option value="1" selected>1 Sekunde</option>
+            <option value="2">2 Sekunden</option>
+            <option value="5">5 Sekunden</option>
+            <option value="10">10 Sekunden</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="summary" class="summary muted">Noch keine Datei geladen.</div>
+      <div id="error" class="error" hidden></div>
+
+      <button id="convertBtn" class="primary" disabled>FIT-Datei erzeugen</button>
+      <a id="downloadLink" class="download" hidden>FIT herunterladen</a>
+    </section>
+
+    <section class="card info">
+      <h2>Enthaltene FIT-Daten</h2>
+      <p>Die App schreibt Zeitstempel, Tiefe, Temperatur und absoluten Druck als FIT-<code>record</code>-Nachrichten. Flaschendruck wird – sofern im JSON vorhanden – als Garmin-kompatibles <code>sensor_profile</code> (Tank-Pod), <code>tank_update</code> und <code>tank_summary</code> geschrieben. Zusätzlich werden Diving-Session, Gasgemisch und eine Dive-Zusammenfassung erzeugt.</p>
+      <p class="muted">Die Verarbeitung findet vollständig lokal im Browser statt. Es werden keine Dateien hochgeladen.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
