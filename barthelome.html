@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#4f829a">
+<title>Barthelome · Ein kleines Fernseh-Leben</title>
+<style>
+  :root { --blue:#4f829a; --silver:#a2b1bf; --ink:#1d1d1b; --white:#ffffff; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; min-height:100%; width:100%; background:var(--ink); }
+  body { min-height:100dvh; display:flex; align-items:center; justify-content:center; font-family:Arial,Helvetica,sans-serif; color:var(--ink); overflow-x:hidden; }
+  .game-frame { container-type:inline-size; position:relative; isolation:isolate; display:grid; grid-template-rows:17% 70% 13%; aspect-ratio:16/9; width:min(98.5vw,calc(98dvh * 16 / 9),1600px); background:var(--silver); border:.22cqw solid var(--ink); outline:1px solid var(--silver); overflow:hidden; }
+
+  /* Eher altes Bildschirmgerät als Website-Dashboard. */
+  .topbar { min-width:0; display:grid; grid-template-columns:23% minmax(0,1fr) 23%; align-items:stretch; gap:0; padding:1.25cqw 1.8cqw; background:var(--silver); border-bottom:.34cqw solid var(--ink); }
+  .brand { min-width:0; display:flex; align-items:center; gap:.9cqw; padding-right:1cqw; border-right:.15cqw solid var(--ink); }
+  .brand-icon { position:relative; flex:0 0 auto; display:block; width:3.35cqw; height:3.1cqw; background:var(--ink); border:.34cqw solid var(--ink); outline:.12cqw solid var(--white); outline-offset:.22cqw; }
+  .brand-icon:before { content:""; position:absolute; inset:.23cqw .55cqw .6cqw .25cqw; border:.13cqw solid var(--white); background:var(--blue); }
+  .brand-icon:after { content:""; position:absolute; right:.2cqw; bottom:.25cqw; width:.27cqw; height:.27cqw; background:var(--white); }
+  .brand-name { font:900 1.5cqw/1.05 "Courier New",Courier,monospace; text-transform:uppercase; letter-spacing:-.05em; overflow-wrap:anywhere; }
+  .brand-sub { margin-top:.54cqw; font:700 .7cqw/1.3 "Courier New",Courier,monospace; text-transform:uppercase; letter-spacing:.065em; }
+  .now { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:.45cqw; padding:0 1.3cqw; overflow:hidden; min-width:0; }
+  .eyebrow { display:flex; justify-content:center; align-items:center; gap:.55cqw; font:700 .74cqw/1 "Courier New",Courier,monospace; letter-spacing:.13em; color:var(--ink); text-transform:uppercase; }
+  .live-dot { display:inline-block; width:.52cqw; height:.52cqw; background:var(--ink); border:.12cqw solid var(--white); }
+  h1 { display:block; max-width:100%; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:800 2.38cqw/1.18 Arial,Helvetica,sans-serif; letter-spacing:-.04em; }
+  .age-chip { display:block; color:var(--ink); font:700 .97cqw/1.2 "Courier New",Courier,monospace; letter-spacing:.035em; border-top:.13cqw solid var(--ink); padding:.43cqw 1.7cqw 0; }
+  .meta { display:flex; flex-direction:column; align-items:flex-end; justify-content:center; min-width:0; gap:.24cqw; border-left:.15cqw solid var(--ink); padding-left:.95cqw; }
+  .date-mini { font:700 .71cqw/1.2 "Courier New",Courier,monospace; text-transform:uppercase; letter-spacing:.13em; }
+  .meta-time { font:900 2.47cqw/1 "Courier New",Courier,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.075em; }
+  .meta-date { font:600 .76cqw/1.3 Arial,Helvetica,sans-serif; text-align:right; }
+
+  .stage { min-width:0; position:relative; overflow:hidden; background:var(--white); border-left:.14cqw solid var(--ink); border-right:.14cqw solid var(--ink); border-bottom:.19cqw solid var(--ink); }
+  .stage svg { position:absolute; inset:0; display:block; width:100%; height:100%; }
+  /* Nur einzelne Teile der gezeichneten Welt reagieren auf Berührungen. */
+  #scene [data-interact] { cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent; }
+  #scene [data-interact]:focus-visible { outline:none; filter:drop-shadow(0 0 7px #ffffff); }
+  .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .stage:after { content:""; position:absolute; z-index:2; inset:0; pointer-events:none; background:repeating-linear-gradient(0deg,transparent 0,transparent 5px,#1d1d1b08 5px,#1d1d1b08 6px); }
+  .stage-loc { position:absolute; z-index:4; left:1.4cqw; bottom:1.35cqw; max-width:32%; padding:.78cqw 1.1cqw .85cqw; background:var(--ink); color:var(--white); border:.16cqw solid var(--white); box-shadow:.25cqw .25cqw 0 var(--blue); }
+  .stage-loc .label { font:700 .68cqw/1.15 "Courier New",Courier,monospace; letter-spacing:.08em; color:var(--silver); }
+  .stage-loc .value { margin-top:.35cqw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:700 1.23cqw/1.13 Arial,Helvetica,sans-serif; }
+  .stage-detail { position:absolute; z-index:4; right:1.45cqw; bottom:1.35cqw; max-width:33%; background:var(--white); border:.17cqw solid var(--ink); padding:.68cqw .85cqw; font:600 .89cqw/1.35 Arial,Helvetica,sans-serif; text-align:left; }
+  .footer { display:grid; grid-template-columns:19% minmax(0,1fr) 21%; gap:1.25cqw; align-items:stretch; padding:1.05cqw 1.8cqw .7cqw; background:var(--white); }
+  .phase-group { min-width:0; border-right:.16cqw solid var(--ink); display:flex; flex-direction:column; justify-content:center; padding-right:1cqw; }
+  .footer-overline { font:700 .68cqw/1.2 "Courier New",Courier,monospace; letter-spacing:.09em; }
+  .stage-label { margin-top:.35cqw; font:800 1.16cqw/1.1 Arial,Helvetica,sans-serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .life-group { min-width:0; display:flex; flex-direction:column; justify-content:center; }
+  .life-top { display:flex; justify-content:space-between; gap:.7cqw; margin-bottom:.56cqw; font:700 .73cqw/1.1 "Courier New",Courier,monospace; }
+  .life-track { position:relative; height:.63cqw; border:.13cqw solid var(--ink); background:var(--silver); }
+  .life-progress { position:absolute; inset:0 auto 0 0; width:0; background:var(--blue); transition:width .5s linear; }
+  .life-marker { position:absolute; top:50%; left:0; width:1.1cqw; height:1.1cqw; transform:translate(-50%,-50%); background:var(--ink); border:.19cqw solid var(--white); outline:.13cqw solid var(--ink); transition:left .5s linear; }
+  .life-ticks { position:relative; height:.93cqw; margin-top:.59cqw; font:700 .6cqw/1.1 "Courier New",Courier,monospace; color:var(--ink); }
+  .life-ticks span { position:absolute; top:0; white-space:nowrap; }
+  .life-ticks span:nth-child(1) { left:0; }
+  .life-ticks span:nth-child(2) { left:22%; transform:translateX(-50%); }
+  .life-ticks span:nth-child(3) { left:67%; transform:translateX(-50%); }
+  .life-ticks span:nth-child(4) { right:0; }
+  .motto-group { display:flex; flex-direction:column; justify-content:center; align-items:flex-end; text-align:right; padding-left:.9cqw; border-left:.16cqw solid var(--ink); }
+  .small-legend { font:700 .67cqw/1.2 "Courier New",Courier,monospace; letter-spacing:.11em; text-transform:uppercase; }
+  .motto { margin-top:.35cqw; font:italic 700 1.2cqw/1.08 Georgia,"Times New Roman",serif; letter-spacing:-.025em; }
+
+  #scene { overflow:visible; }
+  .character-float { animation:bob 3.4s steps(3,end) infinite; transform-origin:0 0; transform-box:fill-box; }
+  .antenna-light { animation:pulse 2.5s steps(2,end) infinite; }
+  .eye-blink { transform-origin:center; transform-box:fill-box; animation:blink 8s infinite; }
+  .cloud-one { animation:drift 17s linear infinite alternate; }
+  .cloud-two { animation:drift 22s linear infinite alternate-reverse; }
+  .zzz { animation:floatZ 3.3s steps(6,end) infinite; opacity:0; }
+  .zzz.two { animation-delay:1s; } .zzz.three { animation-delay:2s; }
+  .screen-glow { opacity:.3; }
+  .signal { animation:signal 2.7s infinite; }
+  .raindrop { animation:rain 1.15s linear infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+  @keyframes blink { 0%,42%,45%,80%,83%,100%{transform:scaleY(1)} 43%,81%{transform:scaleY(.08)} }
+  @keyframes drift { from { transform:translateX(-20px); } to { transform:translateX(45px); } }
+  @keyframes floatZ { 0%{transform:translate(0,13px) scale(.7);opacity:0} 18%{opacity:.85} 82%{opacity:.7} 100%{transform:translate(31px,-75px) scale(1.2);opacity:0} }
+  @keyframes signal { 0%,100%{opacity:.3} 50%{opacity:1} }
+  @keyframes rain { 0%{transform:translateY(-20px);opacity:0} 20%{opacity:.6} 100%{transform:translateY(170px);opacity:0} }
+  /* Jede Tätigkeit besitzt eine kleine, wiederholbare Bewegungs-Choreografie. */
+  .figure.action-dance,.figure.action-sing { animation:danceBody 1.15s ease-in-out infinite; transform-origin:center 76%; transform-box:fill-box; }
+  .figure.action-walk,.figure.action-run,.figure.action-hide { animation:walkBody 1.9s ease-in-out infinite; }
+  .figure.action-run { animation-duration:.75s; }
+  .figure.action-nap,.figure.action-rest { animation:breathing 4s ease-in-out infinite; }
+  .figure.action-typing,.figure.action-repair,.figure.action-mount { animation:workingBody 1.5s ease-in-out infinite; }
+  .figure.action-ball { animation:catchBody 3.3s ease-in-out infinite; }
+  .figure.action-read { animation:readBody 3.9s ease-in-out infinite; }
+  .figure.action-stretch { animation:stretchBody 5s ease-in-out infinite; }
+  .arm-left,.arm-right,.leg-left,.leg-right { transform-origin:0 0; }
+  .action-dance .arm-left,.action-sing .arm-left { animation:armLeftDance 1.15s ease-in-out infinite; }
+  .action-dance .arm-right,.action-sing .arm-right { animation:armRightDance 1.15s ease-in-out infinite; }
+  .action-ball .arm-right { animation:throwArm 3.3s ease-in-out infinite; }
+  .action-ball .arm-left { animation:catchArm 3.3s ease-in-out infinite; }
+  .action-stretch .arm-left { animation:armLeftDance 5s ease-in-out infinite; }
+  .action-stretch .arm-right { animation:armRightDance 5s ease-in-out infinite; }
+  .action-typing .arm-right,.action-draw .arm-right,.action-craft .arm-right { animation:workHand .38s ease-in-out infinite alternate; }
+  .action-repair .arm-right,.action-mount .arm-right,.action-build .arm-right { animation:workHand .9s ease-in-out infinite alternate; }
+  .action-food .arm-right { animation:eating 2s ease-in-out infinite; }
+  .action-walk .leg-left,.action-run .leg-left,.action-hide .leg-left { animation:legStep 1s ease-in-out infinite; }
+  .action-walk .leg-right,.action-run .leg-right,.action-hide .leg-right { animation:legStep 1s ease-in-out infinite reverse; }
+  .action-run .leg-left,.action-run .leg-right {animation-duration:.4s}
+  .figure.action-swing {animation:swingBody 2s ease-in-out infinite}
+  .tossed-ball { animation:ballToss 3.3s cubic-bezier(.35,.0,.6,1) infinite; }
+  .stack-block {animation-duration:6.5s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}
+  .block-one {animation-name:stackOne} .block-two {animation-name:stackTwo} .block-three {animation-name:stackThree}
+  .toy-train {animation:trainRun 5s ease-in-out infinite alternate}
+  .toy-wheel {animation:spin 1s linear infinite;transform-origin:center;transform-box:fill-box}
+  .music-note {animation:musicFloat 2.5s ease-out infinite;opacity:0}
+  .music-note.second {animation-delay:.8s} .music-note.third {animation-delay:1.6s}
+  .swing-seat {animation:swing 2.2s ease-in-out infinite;transform-origin:0 0}
+  .drawing-pen {animation:drawLine 1.8s ease-in-out infinite alternate}
+  .sketch-line {stroke-dasharray:120;stroke-dashoffset:120;animation:sketch 3.6s ease-in-out infinite}
+  .puzzle-piece {animation:puzzleIn 5s ease-in-out infinite}
+  .plant-drop {animation:waterDrop 1.3s ease-in infinite;opacity:0}
+  .plant-drop.b {animation-delay:.4s}.plant-drop.c{animation-delay:.8s}
+  .lab-bubble {animation:labBubble 2.4s ease-out infinite;opacity:0}.lab-bubble.b{animation-delay:.8s}.lab-bubble.c{animation-delay:1.6s}
+  .device-hang {animation:mountScreen 4s ease-in-out infinite}
+  .cable-flow {stroke-dasharray:18 18;animation:cablePulse 1.2s linear infinite}
+  .repair-gear,.film-reel {animation:spin 5s linear infinite;transform-origin:center;transform-box:fill-box}
+  .typing-caret {animation:caret .75s steps(2,end) infinite}
+  .typing-keys {animation:keyboardTap .6s steps(3,end) infinite}
+  .film-light {animation:filmShimmer 3s ease-in-out infinite}
+  .flash {animation:cameraFlash 4s steps(1,end) infinite;opacity:0}
+  .talk-bubble {animation:meetingTalk 3s ease-in-out infinite;opacity:.15}.talk-bubble.second{animation-delay:1.2s}
+  .food-steam {animation:steam 2s ease-in-out infinite;opacity:0}.food-steam.second{animation-delay:.7s}
+  .held-object {transform-origin:center;transform-box:fill-box}
+  .action-read .held-object {animation:bookRead 4s ease-in-out infinite}
+  .action-repair .held-object {animation:repairTurn 1.2s ease-in-out infinite alternate}
+  .action-typing .held-object {animation:keyboardTap .55s steps(2,end) infinite}
+  @keyframes danceBody {0%,100%{transform:translateY(0) rotate(-5deg)}25%{transform:translateY(-12px) rotate(5deg)}50%{transform:translateY(0) rotate(-3deg)}75%{transform:translateY(-12px) rotate(6deg)}}
+  @keyframes walkBody {0%,100%{transform:translate(-10px,0)}50%{transform:translate(28px,-8px)}}
+  @keyframes breathing {0%,100%{transform:translateY(0) scaleX(1)}50%{transform:translateY(1px) scaleX(1.015)}}
+  @keyframes workingBody {0%,100%{transform:translateY(0)}50%{transform:translateY(3px) rotate(1deg)}}
+  @keyframes catchBody {0%,12%,88%,100%{transform:translateY(0)}40%,50%{transform:translateY(-4px)}}
+  @keyframes readBody {0%,100%{transform:rotate(-1deg)}50%{transform:rotate(2deg)}}
+  @keyframes stretchBody {0%,65%,100%{transform:translateY(0)}35%{transform:translateY(-12px) scaleY(1.03)}}
+  @keyframes swingBody {0%,100%{transform:translate(-9px,0) rotate(-3deg)}50%{transform:translate(9px,-8px) rotate(3deg)}}
+  @keyframes armLeftDance {0%,100%{transform:rotate(6deg)}50%{transform:rotate(65deg)}}
+  @keyframes armRightDance {0%,100%{transform:rotate(-15deg)}50%{transform:rotate(-65deg)}}
+  @keyframes throwArm {0%,8%,88%,100%{transform:rotate(0)}23%,65%{transform:rotate(-85deg)}}
+  @keyframes catchArm {0%,8%,88%,100%{transform:rotate(0)}45%,69%{transform:rotate(22deg)}}
+  @keyframes workHand {from{transform:rotate(-9deg)}to{transform:rotate(15deg)}}
+  @keyframes eating {0%,100%{transform:rotate(0)}40%,60%{transform:rotate(-42deg)}}
+  @keyframes legStep {0%,100%{transform:rotate(13deg)}50%{transform:rotate(-13deg)}}
+  @keyframes ballToss {0%,9%,91%,100%{transform:translate(171px,-119px) scale(1)}26%{transform:translate(133px,-312px) scale(.96)}48%,54%{transform:translate(68px,-410px) scale(.93)}76%{transform:translate(130px,-290px) scale(.96)}}
+  @keyframes stackOne {0%,12%,83%,100%{transform:translate(-110px,0)}25%,73%{transform:translate(0,0)}}
+  @keyframes stackTwo {0%,25%,83%,100%{transform:translate(108px,61px) rotate(12deg)}43%,73%{transform:translate(0,0) rotate(0)}}
+  @keyframes stackThree {0%,43%,83%,100%{transform:translate(144px,122px) rotate(-15deg)}62%,73%{transform:translate(0,0) rotate(0)}}
+  @keyframes trainRun {0%{transform:translateX(-70px)}100%{transform:translateX(140px)}}
+  @keyframes musicFloat {0%{transform:translateY(30px) rotate(-7deg);opacity:0}22%{opacity:1}85%{opacity:.9}100%{transform:translateY(-100px) rotate(15deg);opacity:0}}
+  @keyframes swing {0%,100%{transform:rotate(-17deg)}50%{transform:rotate(17deg)}}
+  @keyframes drawLine {0%,100%{transform:translate(0,0) rotate(-15deg)}50%{transform:translate(65px,-18px) rotate(-3deg)}}
+  @keyframes sketch {0%,12%{stroke-dashoffset:120}60%,88%{stroke-dashoffset:0}100%{stroke-dashoffset:120}}
+  @keyframes puzzleIn {0%,20%,85%,100%{transform:translate(94px,-66px) rotate(22deg)}45%,70%{transform:translate(0,0) rotate(0)}}
+  @keyframes waterDrop {0%{transform:translateY(-16px);opacity:0}20%{opacity:1}100%{transform:translateY(68px);opacity:0}}
+  @keyframes labBubble {0%{transform:translateY(0) scale(.5);opacity:0}30%{opacity:1}100%{transform:translateY(-90px) scale(1.6);opacity:0}}
+  @keyframes mountScreen {0%,12%,100%{transform:translateY(45px)}45%,83%{transform:translateY(-23px)}}
+  @keyframes cablePulse {to{stroke-dashoffset:-36}}
+  @keyframes spin {to{transform:rotate(360deg)}}
+  @keyframes caret {50%{opacity:0}}
+  @keyframes keyboardTap {0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+  @keyframes filmShimmer {0%,100%{opacity:.1}50%{opacity:.6}}
+  @keyframes cameraFlash {0%,87%,94%,100%{opacity:0}90%{opacity:.9}}
+  @keyframes meetingTalk {0%,100%{transform:translateY(0);opacity:.2}45%{transform:translateY(-15px);opacity:1}}
+  @keyframes steam {0%{transform:translateY(12px);opacity:0}35%{opacity:.65}100%{transform:translateY(-40px);opacity:0}}
+  @keyframes bookRead {0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+  @keyframes repairTurn {from{transform:rotate(-15deg)}to{transform:rotate(15deg)}}
+  /* Kurzzeit-Reaktionen auf Klicks: getrennt von Barthelomes Tagesablauf. */
+  .character-reaction { transform-origin:center bottom; transform-box:fill-box; }
+  .interactive-character.is-startled .character-reaction { animation:startleJump .94s cubic-bezier(.18,.72,.38,1) both; }
+  .shock-sign, .chew-effect { opacity:0; pointer-events:none; }
+  .interactive-character.is-startled .shock-sign { animation:surprisePop .95s ease-out both; }
+  .interactive-character.is-chewing .chew-effect { animation:chewFace .32s steps(2,end) 4; }
+  .interactive-tree .tree-bends { transform-origin:0px 0px; }
+  .interactive-tree.is-rustling .tree-bends { animation:treeRustle 1.3s ease-in-out both; }
+  .rustle-leaf { opacity:0; }
+  .interactive-tree.is-rustling .rustle-leaf { animation:leafFall 1.2s ease-in-out both; }
+  .interactive-tree.is-rustling .rustle-leaf.b { animation-delay:.13s; }
+  .interactive-tree.is-rustling .rustle-leaf.c { animation-delay:.23s; }
+  .interactive-plant .plant-body { transform-origin:0px 45px; }
+  .interactive-plant.is-rustling .plant-body { animation:plantRustle 1.05s ease-in-out both; }
+  .interactive-cloud .cloud-shape { transform-origin:center; transform-box:fill-box; }
+  .interactive-cloud.is-puffed .cloud-shape { animation:cloudPuff 1.2s ease-in-out both; }
+  .window-shade { transform-origin:center top; transform-box:fill-box; transform:scaleY(0); }
+  .interactive-window.is-peeking .window-shade { animation:shadeDrop 1.65s ease-in-out both; }
+  .tv-bars { opacity:0; }
+  .interactive-tv.is-testing .tv-bars { animation:tvTestPattern 2.2s steps(1,end) both; }
+  .interactive-food.is-feeding .food-piece { animation:feedFly 1.1s cubic-bezier(.25,.5,.35,1) forwards; }
+  @keyframes startleJump { 0%,100%{transform:translateY(0) scale(1)} 12%{transform:translateY(7px) scale(1.05,.94)} 32%{transform:translateY(-73px) rotate(-5deg) scale(.98,1.04)} 48%{transform:translateY(-63px) rotate(4deg)} 70%{transform:translateY(0) scale(1.04,.94)} 82%{transform:translateY(-12px)} }
+  @keyframes surprisePop { 0%,8%{opacity:0;transform:translateY(15px) scale(.3)} 19%,65%{opacity:1;transform:translateY(-6px) scale(1.2)} 85%,100%{opacity:0;transform:translateY(-25px) scale(.7)} }
+  @keyframes chewFace { 0%,100%{opacity:0;transform:scaleY(.4)} 50%{opacity:1;transform:scaleY(1)} }
+  @keyframes treeRustle { 0%,100%{transform:rotate(0)} 14%{transform:rotate(-9deg)} 30%{transform:rotate(8deg)} 46%{transform:rotate(-7deg)} 64%{transform:rotate(5deg)} 79%{transform:rotate(-3deg)} }
+  @keyframes leafFall { 0%{opacity:0;transform:translate(0,0) rotate(0deg)} 10%{opacity:1} 74%{opacity:.9} 100%{opacity:0;transform:translate(55px,110px) rotate(150deg)} }
+  @keyframes plantRustle { 0%,100%{transform:rotate(0)} 20%{transform:rotate(-12deg)} 44%{transform:rotate(11deg)} 67%{transform:rotate(-7deg)} 84%{transform:rotate(4deg)} }
+  @keyframes cloudPuff { 0%,100%{transform:scale(1)} 23%{transform:scale(1.2,.8)} 49%{transform:scale(.87,1.16)} 76%{transform:scale(1.05,.97)} }
+  @keyframes shadeDrop { 0%,100%{transform:scaleY(0)} 32%,57%{transform:scaleY(1)} }
+  @keyframes tvTestPattern { 0%,9%,88%,100%{opacity:0} 10%,87%{opacity:1} }
+  @keyframes feedFly { 0%{opacity:1;transform:translate(0,0) scale(1)} 43%{opacity:1;transform:translate(var(--fly-mid),-125px) scale(.85) rotate(-14deg)} 83%{opacity:1;transform:translate(var(--fly-x),var(--fly-y)) scale(.25) rotate(10deg)} 100%{opacity:0;transform:translate(var(--fly-x),var(--fly-y)) scale(.04)} }
+  @media (prefers-reduced-motion:reduce) { *,*:before,*:after { animation-duration:.001ms!important; transition-duration:.001ms!important; } .interactive-character.is-startled .shock-sign { opacity:1; } }
+  noscript { position:fixed; bottom:1rem; left:1rem; background:white; color:black; padding:1rem; font:14px Arial,sans-serif; }
+</style>
+</head>
+<body>
+<main class="game-frame" aria-label="Barthelome, das virtuelle Fernseh-Lebewesen">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon" aria-hidden="true"></span>
+      <div><div class="brand-name">BARTHELOME</div><div class="brand-sub">Das kleine Fernseh-Leben</div></div>
+    </div>
+    <div class="now" aria-live="polite" aria-atomic="true">
+      <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span> Barthelome gerade</div>
+      <h1 id="activity">Entdeckt die Welt</h1>
+      <div class="age-chip" id="age">0 Jahre alt</div>
+    </div>
+    <div class="meta">
+      <div class="date-mini">Ortszeit / Echtzeit</div>
+      <div class="meta-time" id="time">00:00</div>
+      <div class="meta-date" id="date">–</div>
+    </div>
+  </header>
+  <section class="stage" aria-label="Animierte Umgebung von Barthelome">
+    <svg id="scene" viewBox="0 0 1600 610" preserveAspectRatio="xMidYMid slice" role="group" aria-label="Barthelome in seiner aktuellen Umgebung. Einige Gegenstände sind anklickbar."></svg>
+    <span id="interactionStatus" class="visually-hidden" aria-live="polite" aria-atomic="true"></span>
+    <div class="stage-loc"><div class="label">AUFENTHALTSORT</div><div class="value" id="place">Zuhause</div></div>
+    <div class="stage-detail" id="detail">Ein neues Abenteuer beginnt.</div>
+  </section>
+  <footer class="footer">
+    <div class="phase-group"><div class="footer-overline">Lebensabschnitt</div><div class="stage-label" id="phase">Kindheit</div></div>
+    <div class="life-group"><div class="life-top"><span>LEBENSLAUF</span><span id="progressLabel">Jahr 0 von 100</span></div><div class="life-track"><div class="life-progress" id="progress"></div><div class="life-marker" id="marker"></div></div><div class="life-ticks"><span>Geburt</span><span>Beruf · 22</span><span>Rente · 67</span><span>100</span></div></div>
+    <div class="motto-group"><div class="small-legend">Sein Lebensmotto</div><div class="motto">Kompetenz schafft<br>Vertrauen</div></div>
+  </footer>
+</main>
+<noscript>Bitte JavaScript aktivieren, damit Barthelomes Leben dargestellt werden kann.</noscript>
+<script>
+'use strict';
+// Geburtsdatum
+const GEBURTSDATUM = '2026-10-12';
+const LEBENSJAHRE = 100;
+const C = {blue:'#4f829a', silver:'#a2b1bf',ink:'#1d1d1b',white:'#ffffff'};
+const $ = id => document.getElementById(id);
+const R = (x,y,w,h,fill,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" ${extra}/>`;
+const L = (x1,y1,x2,y2,color=C.ink,sw=5,extra='')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" ${extra}/>`;
+const E = (cx,cy,rx,ry,fill,extra='')=>`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}" ${extra}/>`;
+const T = (x,y,text,size=26,fill=C.ink,extra='')=>`<text x="${x}" y="${y}" font-family="system-ui,sans-serif" font-size="${size}" font-weight="800" fill="${fill}" ${extra}>${String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}</text>`;
+const H = (time)=>{const [h,m='0']=time.split(':');return Number(h)*60+Number(m)};
+function daysSinceBirth(date){const [y,m,d]=GEBURTSDATUM.split('-').map(Number);return Math.floor((Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())-Date.UTC(y,m-1,d))/86400000)}
+function dayHash(date){let s=`${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`,v=2166136261;for(const a of s){v=Math.imul(v^a.charCodeAt(0),16777619)}return v>>>0}
+function phaseFor(a){if(a<0)return 'Noch nicht geboren';if(a<3)return 'Frühe Kindheit';if(a<6)return 'Kindergarten';if(a<18)return 'Schulzeit';if(a<22)return 'Ausbildung';if(a<67)return 'Berufsleben';if(a<85)return 'Ruhestand';if(a<100)return 'Späte Lebensjahre';return 'Ein erfülltes Leben'}
+const evt=(title,scene,place,detail,mood='happy',prop='')=>({title,scene,place,detail,mood,prop});
+const homeSleep=(age)=>evt(age<6?'Träumt ganz friedlich':'Schläft tief und fest','sleep','Schlafzimmer','Auch ein kleiner Fernseher braucht seine Ruhe.','sleep');
+const breakfast=()=>evt('Frühstückt gemütlich','kitchen','Zuhause · Küche','Mit neuer Energie in den Tag.','happy','food');
+const lunch=()=>evt('Isst zu Mittag','kitchen','Küche / Kantine','Erst essen, dann geht es weiter.','happy','food');
+const dinner=()=>evt('Isst zu Abend','kitchen','Zuhause · Küche','Ein ruhiger Abschluss für einen langen Tag.','happy','food');
+const destinations=[
+ {country:'Japan',city:'Tokio · Akihabara',wonder:'Elektronikviertel und futuristische Türme',symbol:'japan'},
+ {country:'Frankreich',city:'Paris',wonder:'Eiffelturm und Lichttechnik',symbol:'paris'},
+ {country:'Schweiz',city:'Genf · CERN',wonder:'Teilchenbeschleuniger und Forschung',symbol:'cern'},
+ {country:'USA',city:'San Francisco',wonder:'Silicon Valley und Zukunftstechnologien',symbol:'sf'},
+ {country:'Singapur',city:'Marina Bay',wonder:'Smart City und einzigartige Architektur',symbol:'singapore'},
+ {country:'Südkorea',city:'Seoul',wonder:'Hightech und moderne Displays',symbol:'seoul'},
+ {country:'Deutschland',city:'Berlin',wonder:'Fernsehturm und Mediengeschichte',symbol:'berlin'},
+ {country:'Vereinigtes Königreich',city:'London',wonder:'Museen, Wissenschaft und Ingenieurskunst',symbol:'london'},
+ {country:'VAE',city:'Dubai',wonder:'Wolkenkratzer und smarte Gebäudetechnik',symbol:'dubai'},
+ {country:'Island',city:'Reykjavík',wonder:'Geothermie und erneuerbare Energie',symbol:'iceland'}
+];
+const ACTIVITIES={
+ baby:[
+ ['Spielt mit Bauklötzen','nursery','Kinderzimmer','Ein kleiner Turm entsteht.','excited'],
+ ['Entdeckt seine Spielsachen','nursery','Kinderzimmer','Alles ist neu und spannend.','happy'],
+ ['Hört Kinderlieder','nursery','Kinderzimmer','Musik macht gute Laune.','happy'],
+ ['Blättert in Bilderbüchern','library','Kinderzimmer','Bunte Bilder wecken seine Neugier.','happy','book'],
+ ['Rollt einen Ball','playground','Spielzimmer','Hin und her, immer wieder.','excited'],
+ ['Übt seine ersten Schritte','nursery','Kinderzimmer','Ein großer Schritt für einen kleinen Fernseher.','focus'],
+ ['Baut eine kleine Eisenbahn','nursery','Spielzimmer','Heute fährt die Fantasie mit.','excited'],
+ ['Malt mit Wachsmalstiften','kindergarten','Spielecke','Die ersten Kunstwerke entstehen.','focus'],
+ ['Tanzt zur Musik','nursery','Kinderzimmer','Arme und Beine bleiben nicht still.','excited'],
+ ['Kuschelt und ruht sich aus','library','Wohnzimmer','Ein ruhiger Moment tut gut.','happy']
+ ],
+ kindergarten:[
+ ['Spielt mit einem Ball','playground','Kindergarten · Garten','Er übt Werfen, Fangen und Rollen.','excited'],
+ ['Tobt auf dem Spielplatz','playground','Kindergarten · Spielplatz','Schaukeln, rutschen und herumflitzen.','excited'],
+ ['Macht ein kleines Nickerchen','sleep','Kindergarten · Ruheraum','Ein kurzes Nickerchen nach dem Spielen.','sleep'],
+ ['Bastelt mit Papier','kindergarten','Kindergarten · Basteltisch','Schneiden, kleben und staunen.','focus'],
+ ['Malt ein buntes Bild','kindergarten','Kindergarten · Maltisch','Er probiert verschiedene Formen aus.','focus'],
+ ['Baut mit Bauklötzen','nursery','Kindergarten · Bauecke','Ein Turm wird immer höher.','excited'],
+ ['Singt mit den Kindern','kindergarten','Kindergarten · Gruppenraum','Alle singen zusammen.','happy'],
+ ['Hört eine Geschichte','library','Kindergarten · Leseecke','Er lauscht aufmerksam.','happy','book'],
+ ['Spielt Verstecken','playground','Kindergarten · Garten','Wer findet zuerst die anderen?','excited'],
+ ['Entdeckt die Natur','garden','Kindergarten · Garten','Blätter, kleine Tiere und viele Fragen.','happy'],
+ ['Spielt mit der Holzeisenbahn','nursery','Kindergarten · Spielecke','Die kleine Lok fährt im Kreis.','excited'],
+ ['Legt ein Puzzle','kindergarten','Kindergarten · Spielecke','Ein Teil nach dem anderen.','focus']
+ ],
+ school:[
+ ['Lernt Mathematik','school','Schule · Klassenzimmer','Zahlen und Logik machen neugierig.','focus','book'],
+ ['Liest im Deutschunterricht','school','Schule · Klassenzimmer','Neue Geschichten und neue Wörter.','focus','book'],
+ ['Experimentiert in Physik','school','Schule · Fachraum','Warum funktioniert das eigentlich?','focus'],
+ ['Programmiert erste Projekte','coding','Schule · Informatikraum','Seine ersten kleinen Programme.','focus','laptop'],
+ ['Hat große Pause','playground','Schulhof','Spielen, reden und frische Luft.','excited'],
+ ['Lernt Englisch','school','Schule · Klassenzimmer','Sprachen öffnen neue Welten.','focus','book'],
+ ['Entwickelt ein Schulprojekt','workshop','Schule · Werkraum','Planen, bauen, ausprobieren.','focus','wrench'],
+ ['Zeichnet im Kunstunterricht','kindergarten','Schule · Kunstraum','Mit Farben entstehen Ideen.','happy'],
+ ['Liest in der Schulbibliothek','library','Schule · Bibliothek','Besonders Technikbücher gefallen ihm.','happy','book'],
+ ['Spielt in der Sportstunde','playground','Schule · Sportplatz','Bewegung gehört dazu.','excited'],
+ ['Macht seine Hausaufgaben','school','Zuhause · Schreibtisch','Er konzentriert sich auf die Aufgaben.','focus','book'],
+ ['Lernt für eine Klassenarbeit','library','Zuhause · Leseecke','Übung macht den Meister.','focus','book']
+ ],
+ training:[
+ ['Montiert einen Fernseher','construction','Baustelle · Medieninstallation','Der Bildschirm muss gerade und sicher hängen.','focus','wrench'],
+ ['Verlegt Signal- und Netzwerkkabel','construction','Baustelle · Kabelwege','Jeder Anschluss bekommt seinen Platz.','focus','wrench'],
+ ['Programmiert eine Webseite','coding','Ausbildungsbetrieb · Büro','HTML, CSS und JavaScript in der Praxis.','focus','laptop'],
+ ['Konfiguriert ein Netzwerk','coding','Ausbildungsbetrieb · Technikraum','Geräte müssen miteinander kommunizieren.','focus','laptop'],
+ ['Prüft Videoanschlüsse','workshop','Ausbildungsbetrieb · Werkstatt','Ein sauberes Bild braucht gute Signale.','focus','wrench'],
+ ['Lernt Elektrotechnik','school','Berufsschule · Klassenraum','Spannung, Strom und sichere Installation.','focus','book'],
+ ['Besucht den Berufsschulunterricht','school','Berufsschule','Theorie gehört zur Ausbildung.','focus','book'],
+ ['Testet eine Mediensteuerung','workshop','Ausbildungsbetrieb · Labor','Tasten, Sensoren und Displays spielen zusammen.','focus','wrench'],
+ ['Dokumentiert seine Arbeit','coding','Ausbildungsbetrieb · Büro','Er hält jeden Arbeitsschritt fest.','focus','laptop'],
+ ['Lernt für seine Prüfung','library','Zuhause · Schreibtisch','Gelerntes festigen und Neues verstehen.','focus','book'],
+ ['Installiert einen Projektor','construction','Baustelle · Besprechungsraum','Jetzt stimmt das Bild auf der Leinwand.','focus','wrench'],
+ ['Macht eine Teambesprechung','course','Ausbildungsbetrieb','Gemeinsam findet man bessere Lösungen.','happy']
+ ],
+ work:[
+ ['Montiert große Fernseher','construction','Baustelle · Medieninstallation','Displays montieren und genau ausrichten.','focus','wrench'],
+ ['Programmiert eine Webseite','coding','Büro · Webentwicklung','Aus einer Idee entsteht eine Anwendung.','focus','laptop'],
+ ['Entwickelt komplexe Systeme','coding','Büro · Systementwicklung','Server, Schnittstellen und Displays greifen ineinander.','focus','laptop'],
+ ['Wartet eine Medienanlage','workshop','Technikzentrale','Prüfen, messen und Fehler finden.','focus','wrench'],
+ ['Installiert Konferenztechnik','construction','Baustelle · Konferenzraum','Mikrofone, Kameras und Steuerungen verbinden.','focus','wrench'],
+ ['Konfiguriert ein Videosystem','coding','Medientechnikbüro','Die Inhalte erscheinen auf den richtigen Bildschirmen.','focus','laptop'],
+ ['Besucht einen Fachlehrgang','course','Fortbildungszentrum','Neue Standards und Technologien kennenlernen.','focus','book'],
+ ['Plant eine neue Installation','coding','Büro · Planung','Zuerst die Skizze, dann der Aufbau.','focus','laptop'],
+ ['Repariert ein defektes Gerät','workshop','Servicewerkstatt','Fehlersuche mit Geduld und Messgerät.','focus','wrench'],
+ ['Betreut eine Live-Produktion','construction','Veranstaltungstechnik','Bild und Ton müssen zuverlässig laufen.','focus','wrench'],
+ ['Schreibt technische Dokumentation','coding','Büro · Arbeitsplatz','Gute Dokumentation schafft Vertrauen.','focus','laptop'],
+ ['Schult andere Techniker','course','Schulungsraum','Er gibt seine Erfahrung weiter.','happy','book']
+ ],
+ retired:[
+ ['Liest einen Roman','library','Zuhause · Leseecke','Endlich Zeit für lange Bücher.','happy','book'],
+ ['Bastelt an einem alten Fernseher','workshop','Eigene Werkstatt','Technik fasziniert ihn noch immer.','focus','wrench'],
+ ['Pflegt seinen Garten','garden','Im Garten','In Ruhe gießen und nach den Pflanzen sehen.','happy'],
+ ['Schaut einen Klassiker','cinema','Wohnzimmer','Ein guter Film wird nie langweilig.','happy','popcorn'],
+ ['Schreibt seine Erinnerungen','coding','Zuhause · Schreibtisch','Er hält Geschichten aus seinem Leben fest.','focus','laptop'],
+ ['Löst ein kniffliges Rätsel','library','Zuhause · Lesesessel','Der Kopf bleibt in Bewegung.','focus','book'],
+ ['Programmiert ein Hobbyprojekt','coding','Zuhause · Schreibtisch','Ohne Termindruck macht es besonders Spaß.','focus','laptop'],
+ ['Geht gemütlich spazieren','garden','Im Park','Die Natur lässt ihn zur Ruhe kommen.','happy'],
+ ['Besucht eine Ausstellung','course','Technikmuseum','Alte und neue Erfindungen bestaunen.','excited'],
+ ['Sortiert seine Fotos','library','Zuhause · Wohnzimmer','Viele Reisen, viele Erinnerungen.','happy','book'],
+ ['Hört interessante Vorträge','course','Vortragssaal','Man ist nie zu alt zum Lernen.','focus','book'],
+ ['Plant die nächste Reise','coding','Zuhause · Schreibtisch','Die Welt hat noch viel zu bieten.','happy','laptop']
+ ],
+ senior:[
+ ['Liest alte Lieblingsbücher','library','Zuhause · Lesezimmer','Manche Geschichten bleiben besonders.','happy','book'],
+ ['Genießt die Morgensonne','garden','Gartenbank','Ein ruhiger Beginn des Tages.','happy'],
+ ['Schaut einen Lieblingsfilm','cinema','Wohnzimmer','Die Klassiker sind noch genauso gut.','happy','popcorn'],
+ ['Blättert durch Fotoalben','library','Zuhause · Sofa','Erinnerungen an ferne Orte.','happy','book'],
+ ['Erzählt von früher','library','Wohnzimmer','Es gibt viele Geschichten zu erzählen.','happy'],
+ ['Bastelt vorsichtig an Technik','workshop','Eigene Werkstatt','Seine Neugier bleibt.','focus','wrench'],
+ ['Löst ein Kreuzworträtsel','library','Zuhause · Lesesessel','Ein bisschen Denksport.','focus','book'],
+ ['Geht langsam spazieren','garden','Im Park','Die frische Luft tut gut.','happy'],
+ ['Hört einen Fachvortrag','course','Zuhause · Bildschirm','Neugier kennt kein Alter.','focus','book'],
+ ['Schreibt einen Brief','coding','Zuhause · Schreibtisch','Er hält Kontakt zu Freunden.','happy','laptop'],
+ ['Beobachtet die Vögel','garden','Im Garten','Kleine Erlebnisse zählen.','happy'],
+ ['Genießt einen ruhigen Nachmittag','garden','Gartenbank','Es muss nicht immer hektisch sein.','happy']
+ ]
+};
+const MOTIONS={
+ baby:['blocks','toys','sing','read','ball','walk','train','draw','dance','rest'],
+ kindergarten:['ball','swing','nap','craft','draw','blocks','sing','read','hide','garden'],
+ school:['study','read','science','typing','ball','study','build','draw','read','run'],
+ training:['mount','cable','typing','typing','repair','study','read','build','typing','read'],
+ work:['mount','typing','typing','repair','mount','typing','study','draw','repair','camera'],
+ retired:['read','repair','garden','film','typing','puzzle','typing','walk','study','read'],
+ senior:['read','rest','film','read','sing','repair','puzzle','walk','study','draw']
+};
+const LEISURE={
+ child:[
+ ['Liest ein Bilderbuch','library','Zuhause · Leseecke','Noch eine spannende Geschichte.','happy','book','read'],
+ ['Spielt mit einem Ball','playground','Draußen','Fangen und werfen macht Spaß.','excited','','ball'],
+ ['Baut einen hohen Turm','nursery','Zuhause · Spielzimmer','Ein Klotz nach dem anderen.','focus','','blocks'],
+ ['Malt ein Bild','kindergarten','Zuhause · Maltisch','Heute wird es besonders bunt.','focus','','draw'],
+ ['Tanzt zur Musik','nursery','Zuhause · Wohnzimmer','Ein Lied nach dem anderen.','excited','','dance'],
+ ['Spielt mit der Eisenbahn','nursery','Zuhause · Spielzimmer','Die Lok fährt ihre Runden.','happy','','train'],
+ ['Hört eine Geschichte','library','Zuhause · Sofa','Eine Geschichte zum Träumen.','happy','book','read'],
+ ['Löst ein Puzzle','kindergarten','Zuhause · Tisch','Gleich passt das letzte Teil.','focus','','puzzle'],
+ ['Tobt im Garten','playground','Zuhause · Garten','Heute ist Bewegung angesagt.','excited','','run'],
+ ['Kuschelt und entspannt','nursery','Zuhause · Wohnzimmer','Ein ruhiger Abend.','happy','','rest']
+ ],
+ teen:[
+ ['Liest einen spannenden Roman','library','Zuhause · Leseecke','In Büchern entdeckt er neue Welten.','happy','book','read'],
+ ['Programmiert sein eigenes Spiel','coding','Zuhause · Computer','Eine neue Idee nimmt Gestalt an.','focus','laptop','typing'],
+ ['Schaut einen Film','cinema','Zuhause · Wohnzimmer','Ein guter Filmabend.','happy','popcorn','film'],
+ ['Trifft sich zum Ballspielen','playground','Sportplatz','Gemeinsam macht es mehr Spaß.','excited','','ball'],
+ ['Baut einen kleinen Roboter','workshop','Zuhause · Werkbank','Schrauben, messen und probieren.','focus','wrench','repair'],
+ ['Hört Musik und tanzt','nursery','Zuhause · Wohnzimmer','Sein Lieblingslied läuft.','excited','','dance'],
+ ['Lernt etwas Neues','library','Zuhause · Leseecke','Wissen macht neugierig.','focus','book','read'],
+ ['Geht eine Runde spazieren','garden','Im Park','Bewegung an der frischen Luft.','happy','','walk'],
+ ['Zeichnet ein Comic','kindergarten','Zuhause · Schreibtisch','Ein neuer Charakter entsteht.','focus','','draw'],
+ ['Spielt mit seinen Freunden','playground','Draußen','Zusammen lachen und spielen.','excited','','run']
+ ],
+ adult:[
+ ['Liest ein Technikbuch','library','Zuhause · Leseecke','Noch ein interessantes Kapitel.','happy','book','read'],
+ ['Programmiert ein Hobbyprojekt','coding','Zuhause · Schreibtisch','Auch nach Feierabend tüftelt er gern.','focus','laptop','typing'],
+ ['Schaut einen Film','cinema','Zuhause · Wohnzimmer','Filmabend auf dem Sofa.','happy','popcorn','film'],
+ ['Repariert ein altes Gerät','workshop','Zuhause · Werkstatt','Eine gute Reparatur macht Freude.','focus','wrench','repair'],
+ ['Tanzt zu seiner Lieblingsmusik','nursery','Zuhause · Wohnzimmer','Ein paar Minuten einfach tanzen.','excited','','dance'],
+ ['Macht einen Abendspaziergang','garden','Im Park','Frische Luft tut gut.','happy','','walk'],
+ ['Löst ein kniffliges Rätsel','library','Zuhause · Sofa','Die Lösung ist fast gefunden.','focus','book','puzzle'],
+ ['Plant eine kleine Reise','coding','Zuhause · Schreibtisch','Neue Technikorte warten auf ihn.','happy','laptop','typing'],
+ ['Bastelt an einem Minicomputer','workshop','Zuhause · Werkstatt','Kabel, Chips und neue Ideen.','focus','wrench','build'],
+ ['Hört Musik','library','Zuhause · Wohnzimmer','Er genießt einen entspannten Abend.','happy','','sing']
+ ]
+};
+const positiveMod=(n,m)=>((n%m)+m)%m;
+function activityNumber(date){
+ const hour=date.getHours(),minutes=date.getMinutes();
+ if(hour<8||hour>=22)return null;
+ const activeHour=minutes>=hour?hour:hour-1;
+ if(activeHour<8)return null;
+ return 1+positiveMod(372*date.getFullYear()+31*(date.getMonth()+1)+date.getDate()+positiveMod(activeHour-8,5),10);
+}
+function useActivity(group,number){
+ const index=(number??1)-1;
+ const row=ACTIVITIES[group][index];
+ return {...evt(...row),motion:MOTIONS[group][index],number};
+}
+function leisureActivity(group,number){
+ const arr=LEISURE[group],row=arr[(number??1)-1];
+ return {...evt(...row.slice(0,6)),motion:row[6],number};
+}
+function nap(place='Kindergarten · Ruheraum'){
+ return {...evt('Macht ein kleines Nickerchen','sleep',place,'Schlaf gut, Barthelome.','sleep'),motion:'nap'};
+}
+function travelActivity(age,number){
+ const d=destinations[Math.floor(age/4)%destinations.length];
+ const rows=[
+  ['Entdeckt technische Wunder','travel',d.city,d.wonder+'.','excited','camera','camera'],
+  ['Fotografiert eine Sehenswürdigkeit','travel',d.city,'Er hält seine Eindrücke fest.','happy','camera','camera'],
+  ['Besucht ein Technikmuseum','course',d.city,'Überall findet er spannende Erfindungen.','focus','book','study'],
+  ['Spaziert durch die Stadt','travel',d.city,'Eine neue Straße und immer neue Eindrücke.','happy','','walk'],
+  ['Liest über die Reiseregion','library',`${d.city} · Hotel`,'Ein bisschen Hintergrundwissen gehört dazu.','happy','book','read'],
+  ['Entdeckt die Architektur','travel',d.city,d.wonder+'.','excited','camera','camera'],
+  ['Dokumentiert seine Reise','coding',`${d.city} · Hotel`,'Sein Reisebericht wächst.','focus','laptop','typing'],
+  ['Besucht eine Fachausstellung','course',d.city,'Alte Technik und neue Ideen.','happy','book','study'],
+  ['Erkundet den Stadtpark','travel',d.city,'Auch unterwegs macht Bewegung Spaß.','happy','','walk'],
+  ['Skizziert eine neue Erfindung','library',`${d.city} · Café`,'Die Reise inspiriert ihn.','focus','book','draw']
+ ];
+ const row=rows[(number??1)-1];
+ return {...evt(...row.slice(0,6)),motion:row[6],destination:d,number};
+}
+function resolveActivity(date,age){
+ const h=date.getHours(),minute=date.getMinutes(),time=h*60+minute;
+ const dow=date.getDay(),weekend=dow===0||dow===6,hash=dayHash(date);
+ const holiday=(date.getMonth()===6||date.getMonth()===7||(date.getMonth()===11&&date.getDate()>=24)||(date.getMonth()===0&&date.getDate()<=6));
+ const number=activityNumber(date);
+ if(age<0)return {...evt('Wartet auf seinen Geburtstag','nursery','Ein gemütliches Zuhause','Seine Geschichte beginnt am '+GEBURTSDATUM+'.','happy'),motion:'rest'};
+ if(age>=LEBENSJAHRE)return evt('Seine Geschichte lebt weiter','memorial','In liebevoller Erinnerung','100 Lebensjahre voller Ideen, Neugier und Vertrauen.','happy');
+ const travelling=(age>=28&&age<67&&(age%19===7||age%19===8))||(age>=67&&age<85&&[2,3,4].includes(age%9))||(age>=85&&age<94&&age%17===4);
+ const sick=age>=3&&age<92&&(hash%37===9||hash%43===7);
+ const isGroup=age>=3&&age<18,doesWork=age>=18&&age<67;
+ if(time>=H('22:00')||time<H('07:00')){
+  const place=travelling?`${destinations[Math.floor(age/4)%destinations.length].city} · Hotel`:'Schlafzimmer';
+  return {...homeSleep(age),place,motion:'nap'};
+ }
+ if(time>=H('07:00')&&time<H('08:00'))return {...evt('Wird langsam wach',age<6?'nursery':'library',travelling?'Hotelzimmer':'Zuhause','Er streckt sich und startet ruhig in den Tag.','happy'),motion:'stretch'};
+ if(time>=H('08:00')&&time<H('09:00'))return {...breakfast(),place:travelling?'Hotel · Frühstücksraum':'Zuhause · Küche',motion:'food'};
+ if(time>=H('12:00')&&time<H('12:30'))return {...lunch(),place:travelling?'Unterwegs · Restaurant':(age>=3&&age<18&&!weekend?'Kindergarten / Schule · Speiseraum':'Küche / Kantine'),motion:'food'};
+ if(time>=H('19:00')&&time<H('20:00'))return {...dinner(),place:travelling?'Unterwegs · Restaurant':'Zuhause · Küche',motion:'food'};
+ if(sick){
+  if(time>=H('13:00')&&time<H('15:00'))return nap('Zuhause · Krankenbett');
+  return {...evt('Kuriert sich aus','sick','Zuhause · Krankenbett','Tee, Ruhe und etwas Geduld.','sick','thermometer'),motion:'rest'};
+ }
+ if(dow===5&&time>=H('09:00')&&time<H('10:00')&&(isGroup||doesWork)){
+  return isGroup
+   ? {...evt('Hat Gruppentreffen',age<6?'kindergarten':'school',age<6?'Kindergarten · Gruppenraum':'Schule · Klassenzimmer','Gemeinsam wird der Tag besprochen.','happy'),motion:'meeting'}
+   : {...evt('Hat Dienstberatung','course',age<22?'Ausbildungsbetrieb · Besprechungsraum':'Betrieb · Besprechungsraum','Gemeinsam besprechen sie Projekte und Aufgaben.','focus'),motion:'meeting'};
+ }
+ if(travelling)return travelActivity(age,number);
+ if(age<3){
+  if(time>=H('13:00')&&time<H('14:00'))return nap('Kinderzimmer');
+  return useActivity('baby',number);
+ }
+ if(age<6){
+  if(!weekend&&!holiday&&time>=H('09:00')&&time<H('16:00'))return useActivity('kindergarten',number);
+  return leisureActivity('child',number);
+ }
+ if(age<18){
+  if(!weekend&&!holiday&&time>=H('09:00')&&time<H('15:00'))return useActivity('school',number);
+  return leisureActivity('teen',number);
+ }
+ if(age<22){
+  if(!weekend&&time>=H('09:00')&&time<H('17:00'))return useActivity('training',number);
+  return leisureActivity('adult',number);
+ }
+ if(age<67){
+  if(!weekend&&time>=H('09:00')&&time<H('17:30'))return useActivity('work',number);
+  return leisureActivity('adult',number);
+ }
+ return useActivity(age<85?'retired':'senior',number);
+}
+const defs=`<defs>
+  <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#ffffff"/></linearGradient>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a2b1bf"/><stop offset="100%" stop-color="#a2b1bf"/></linearGradient>
+  <linearGradient id="tvScreen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a2b1bf"/><stop offset="100%" stop-color="#a2b1bf"/></linearGradient>
+  <pattern id="floorlines" width="92" height="48" patternUnits="userSpaceOnUse"><path d="M0 0H92M0 0V48" stroke="#1d1d1b" stroke-opacity=".09" stroke-width="2"/></pattern>
+  <pattern id="screenlines" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M0 9H10" stroke="#ffffff" stroke-opacity=".12" stroke-width="1"/></pattern>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="10"/></filter>
+</defs>`;
+function cloud(x,y,s=.8,cls='cloud-one'){
+ return `<g class="interactive-cloud" data-interact="cloud" role="button" tabindex="0" aria-label="Wolke anstupsen" transform="translate(${x} ${y}) scale(${s})" fill="#ffffff" opacity=".8"><g class="${cls}"><g class="cloud-shape">${E(0,0,68,23,C.white)}${E(-33,-17,40,30,C.white)}${E(15,-28,46,34,C.white)}</g>${E(0,-8,91,62,'transparent','pointer-events="all"')}</g></g>`;
+}
+function backgroundIndoor(night=false){let city='';for(let i=0;i<9;i++){const x=1113+i*39,h=43+(i*37%65);city+=R(x,326-h,30,h,C.blue,'opacity=".39"')+R(x+8,342-h,7,8,C.white,'opacity=".7"')}
+ return R(0,0,1600,610,'url(#wall)')+R(0,0,1600,610,C.white,'opacity=".35"')+
+ `<path d="M0 124H1600M0 318H1600" stroke="#4f829a" stroke-opacity=".1" stroke-width="2"/>`+
+ `<g class="interactive-window" data-interact="window" role="button" tabindex="0" aria-label="Fensterrollo herunterlassen">`+
+ R(1060,86,410,273,C.white,'rx="17" stroke="#4f829a" stroke-width="14"')+R(1078,103,375,239,night?C.blue:C.silver,'rx="6"')+E(1360,172,night?20:35,night?20:35,C.white,'opacity=".84"')+city+L(1264,100,1264,357,C.white,12)+L(1071,224,1462,224,C.white,12)+R(1078,103,375,239,C.blue,'class="window-shade" opacity=".9"')+R(1060,86,410,273,'transparent','pointer-events="all"')+'</g>'+
+ R(0,456,1600,154,C.silver)+R(0,460,1600,150,'url(#floorlines)')+L(0,455,1600,455,C.blue,7,'opacity=".45"')+
+ R(0,0,20,456,C.blue,'opacity=".17"');}
+function backgroundOutdoor(night=false){let stars='';if(night)for(let i=0;i<23;i++){const x=(i*137+65)%1600,y=(i*79+34)%315;stars+=`<circle cx="${x}" cy="${y}" r="${i%3+2}" fill="${C.white}" opacity=".83"/>`}
+ return R(0,0,1600,610,night?C.blue:'url(#sky)')+stars+
+ E(1350,100,night?39:53,C.white,'opacity=".85"')+
+ cloud(180,108,1.1)+cloud(680,145,.67,'cloud-two')+
+ `<path d="M0 396Q230 265 475 395T1000 380T1600 382V610H0Z" fill="#4f829a" opacity=".26"/>`+
+ `<path d="M0 442Q245 395 510 455T1100 432T1600 444V610H0Z" fill="#4f829a" opacity=".32"/>`+
+ R(0,471,1600,139,C.silver)+R(0,483,1600,127,'url(#floorlines)')+L(0,471,1600,471,C.blue,8,'opacity=".4"');}
+function pottedPlant(x,y=455,s=1){return `<g class="interactive-plant" data-interact="plant" role="button" tabindex="0" aria-label="Pflanze anstupsen" transform="translate(${x} ${y}) scale(${s})"><g class="plant-body">${L(0,-2,-15,-82,C.blue,9)}${L(0,-2,24,-96,C.blue,8)}${L(0,-15,-43,-67,C.blue,7)}${E(-42,-73,21,12,C.blue,'transform="rotate(38 -42 -73)"')}${E(31,-94,23,13,C.blue,'transform="rotate(-38 31 -94)"')}${E(-9,-109,14,30,C.blue,'transform="rotate(-24 -9 -109)"')}${R(-33,-8,68,56,C.ink,'rx="7"')}${R(-28,-9,58,14,C.blue,'rx="3"')}</g>${R(-63,-154,126,210,'transparent','pointer-events="all"')}</g>`}
+function interactiveTree(x,y,s=1){return `<g class="interactive-tree" data-interact="tree" role="button" tabindex="0" aria-label="Baum rascheln lassen" transform="translate(${x} ${y}) scale(${s})"><g class="tree-bends">${L(0,0,0,-184,C.ink,21)}${E(0,-208,102,84,C.blue)}${E(-65,-185,68,66,C.blue)}${E(73,-181,65,67,C.blue)}</g><g class="rustle-leaf">${E(-64,-210,12,7,C.silver,'transform="rotate(25 -64 -210)"')}</g><g class="rustle-leaf b">${E(42,-266,12,7,C.white,'transform="rotate(-30 42 -266)"')}</g><g class="rustle-leaf c">${E(92,-212,12,7,C.silver)}</g>${E(0,-187,132,125,'transparent','pointer-events="all"')}${R(-16,-175,32,183,'transparent','pointer-events="all"')}</g>`}
+function wallFrame(label,x=130,y=95,w=430){return R(x,y,w,210,C.white,'rx="16" stroke="#4f829a" stroke-width="13"')+R(x+18,y+22,w-36,158,C.blue,'rx="5"')+T(x+36,y+75,label,30,C.white,'letter-spacing="2"');}
+function bedroom(message='SCHLAF GUT'){return backgroundIndoor(true)+
+ E(370,437,285,29,C.ink,'opacity=".13"')+R(380,271,125,177,C.blue,'rx="15"')+R(353,385,685,115,C.white,'rx="21" stroke="#1d1d1b" stroke-width="10"')+
+ R(370,399,640,85,C.silver,'rx="17"')+R(383,381,151,50,C.white,'rx="18"')+
+ R(196,355,105,100,C.blue,'rx="9"')+R(205,329,87,32,C.white,'rx="5"')+T(218,350,'Z z',19,C.blue)+
+ R(1220,320,150,144,C.white,'rx="7" stroke="#4f829a" stroke-width="7"')+R(1250,287,87,39,C.silver,'rx="19"')+
+ T(193,197,message,30,C.blue,'letter-spacing="3"');}
+function bedFront(){return R(570,474,480,78,C.blue,'rx="24" stroke="#1d1d1b" stroke-width="9"')+L(591,506,1032,506,C.white,4,'opacity=".3"')}
+function nursery(){return backgroundIndoor()+wallFrame('SPIELEN & LERNEN',125,75,460)+
+ R(180,390,65,65,C.blue,'rx="8"')+R(257,365,73,90,C.white,'rx="7" stroke="#4f829a" stroke-width="6"')+
+ R(340,418,100,37,C.silver,'rx="4" stroke="#4f829a" stroke-width="5"')+
+ `<path d="M1190 437V320L1315 250L1440 320V437Z" fill="#ffffff" stroke="#4f829a" stroke-width="12"/>`+R(1285,360,62,77,C.blue,'rx="7"')+
+ E(152,452,39,39,C.blue)+E(152,452,16,16,C.white)+T(1300,197,'★',75,C.blue);}
+function kindergarten(){return backgroundIndoor()+wallFrame('KINDERGARTEN',140,70,450)+
+ R(160,382,330,20,C.ink,'rx="6"')+L(185,402,185,467,C.ink,14)+L(460,402,460,467,C.ink,14)+
+ R(220,312,73,69,C.blue,'rx="5"')+R(290,334,79,47,C.silver,'rx="5" stroke="#4f829a" stroke-width="5"')+
+ `<path d="M384 380L434 296L480 380Z" fill="#4f829a"/>`+
+ R(1205,310,190,140,C.white,'rx="10" stroke="#4f829a" stroke-width="7"')+
+ R(1218,328,35,95,C.blue)+R(1264,348,25,75,C.silver)+R(1298,322,42,101,C.blue)+R(1349,357,30,66,C.ink)+
+ E(1065,426,40,40,C.blue)+E(1065,426,12,12,C.white);}
+function school(){let formula=T(203,187,'A + B = ?',41,C.white)+T(207,253,'01   10   11',29,C.white)+L(205,282,534,282,C.white,4,'opacity=".5"');
+ return backgroundIndoor()+R(130,93,510,280,C.ink,'rx="11" stroke="#4f829a" stroke-width="17"')+formula+
+ R(990,348,420,34,C.blue,'rx="7"')+L(1020,382,1020,476,C.ink,17)+L(1372,382,1372,476,C.ink,17)+
+ R(1060,295,135,54,C.white,'rx="8"')+R(1088,286,105,11,C.blue,'rx="4"')+T(1107,331,'ABC',21,C.blue)+
+ R(1180,300,170,44,C.silver,'rx="6"')+R(1337,285,40,64,C.ink,'rx="7"')+
+ T(210,76,'SCHULE',23,C.blue,'letter-spacing="4"');}
+function playground(){return backgroundOutdoor()+interactiveTree(632,466,.66)+
+  L(180,218,180,475,C.ink,10)+L(395,218,395,475,C.ink,10)+L(180,218,395,218,C.ink,10)+`<g transform="translate(308 218)"><g class="swing-seat">${L(-28,0,-43,145,C.ink,5)}${L(28,0,43,145,C.ink,5)}${R(-57,145,114,18,C.blue,'rx="9"')}</g></g>`+
+ `<path d="M1160 463L1310 265L1430 463Z" fill="#4f829a" stroke="#1d1d1b" stroke-width="7"/>`+
+ `<path d="M1258 337L1322 337L1231 467L1160 467Z" fill="#ffffff" opacity=".75"/>`+
+ R(1085,460,391,16,C.blue,'rx="8"')+
+ E(490,451,29,29,C.blue)+E(490,451,9,9,C.white);}
+function workbench(){return backgroundIndoor()+wallFrame('WERKSTATT',100,74,480)+
+ R(120,350,420,34,C.ink,'rx="6"')+L(151,386,151,469,C.ink,15)+L(514,386,514,469,C.ink,15)+
+ R(159,277,210,68,C.blue,'rx="9" stroke="#1d1d1b" stroke-width="7"')+R(183,293,160,35,C.silver,'rx="4"')+
+ L(385,301,430,330,C.blue,11)+E(446,315,17,17,C.blue)+
+ `<g class="interactive-tv" data-interact="tv" role="button" tabindex="0" aria-label="Fernseher testen">`+
+ R(1120,130,322,229,C.ink,'rx="12"')+R(1141,150,280,178,C.blue,'rx="4"')+R(1180,186,192,104,C.silver,'rx="5"')+
+ `<g class="tv-bars">${[C.white,C.silver,C.blue,C.ink,C.white,C.blue].map((color,i)=>R(1141+i*46.6,150,47,178,color)).join('')}</g>`+
+ R(1120,130,322,229,'transparent','pointer-events="all"')+'</g>'+
+ L(1280,359,1280,397,C.ink,12)+R(1219,390,126,14,C.ink,'rx="7"')+
+ R(1130,424,255,15,C.blue,'rx="7"')+R(1150,439,19,39,C.ink)+R(1354,439,19,39,C.ink);}
+function construction(){let scaffold='';for(let x=1080;x<=1480;x+=200)scaffold+=L(x,114,x,474,C.ink,13);for(let y=175;y<=435;y+=130)scaffold+=L(1075,y,1495,y,C.ink,12);
+ return backgroundIndoor()+
+ R(0,110,765,316,C.silver,'opacity=".55"')+R(90,130,490,260,C.ink,'rx="13"')+R(108,148,453,223,C.blue,'rx="5"')+
+ R(144,178,167,84,C.silver,'rx="7"')+R(325,178,196,22,C.white,'rx="3"')+R(325,216,163,14,C.white,'rx="3"')+R(325,244,126,14,C.white,'rx="3"')+R(144,282,377,11,C.white,'rx="4"')+R(144,309,295,11,C.silver,'rx="4"')+
+ scaffold+R(1203,228,173,145,C.blue,'rx="6"')+R(1220,244,139,112,C.silver,'rx="3"')+
+ `<path d="M1126 436l28 -45l26 45zm62 0l28 -45l26 45zm62 0l28 -45l26 45z" fill="#1d1d1b" opacity=".65"/>`+
+ T(110,89,'MEDIENINSTALLATION',25,C.ink,'letter-spacing="3"');}
+function coding(){let code='';for(let i=0;i<9;i++){code+=R(193+(i%2)*32,141+i*25,250-((i*37)%100),10,i%3===0?C.white:C.silver,'rx="4" opacity=".9"')}
+ return backgroundIndoor()+
+ R(127,82,497,341,C.ink,'rx="18"')+R(147,103,455,290,C.blue,'rx="7"')+
+ T(193,132,'</>  DEV.STUDIO',23,C.white,'letter-spacing="2"')+code+
+ R(990,335,440,31,C.ink,'rx="6"')+L(1017,363,1017,475,C.ink,16)+L(1402,363,1402,475,C.ink,16)+
+ R(1025,136,340,196,C.ink,'rx="13"')+R(1041,154,306,156,C.blue,'rx="5"')+
+ T(1063,201,'const idea =',24,C.white)+T(1080,251,'createFuture();',21,C.white)+
+ L(1191,332,1191,344,C.ink,11)+R(1135,343,116,13,C.ink,'rx="5"')+R(1100,385,203,14,C.silver,'rx="6"')+
+ R(1360,255,47,78,C.white,'rx="7"')+E(1383,287,15,15,C.blue);}
+function library(){let books='';for(let shelf=0;shelf<3;shelf++){for(let i=0;i<8;i++){let x=140+i*54,y=140+shelf*97,w=25+(i*11)%18;books+=R(x,y,w,75-(i%3)*7,[C.blue,C.ink,C.silver,C.white][(i+shelf)%4],'rx="4"')}books+=R(114,220+shelf*97,480,12,C.ink,'rx="5"')}
+ return backgroundIndoor()+R(104,105,511,378,C.blue,'rx="10" opacity=".35"')+books+
+ R(1095,346,272,105,C.blue,'rx="36"')+R(1110,316,242,79,C.white,'rx="35" stroke="#4f829a" stroke-width="8"')+
+ R(1071,406,326,66,C.ink,'rx="20"')+L(1125,466,1115,493,C.ink,15)+L(1330,466,1340,493,C.ink,15)+
+ R(1020,277,59,69,C.ink,'rx="4"')+L(1051,276,1051,216,C.ink,8)+E(1051,210,57,17,C.white)+T(182,91,'BÜCHER & IDEEN',24,C.blue,'letter-spacing="3"');}
+function kitchen(){return backgroundIndoor()+
+ R(126,251,415,211,C.white,'rx="15" stroke="#4f829a" stroke-width="9"')+R(146,276,376,26,C.blue,'rx="8"')+
+ R(165,342,89,115,C.silver,'rx="4"')+R(270,342,89,115,C.silver,'rx="4"')+R(373,342,143,115,C.silver,'rx="4"')+
+ R(1090,336,349,23,C.ink,'rx="8"')+L(1120,355,1120,473,C.ink,16)+L(1404,355,1404,473,C.ink,16)+
+ E(1248,332,108,20,C.white,'stroke="#4f829a" stroke-width="8"')+E(1248,329,39,10,C.silver)+
+ R(1340,264,37,64,C.blue,'rx="6"')+R(1347,256,23,11,C.white,'rx="4"')+
+ R(171,95,245,128,C.blue,'rx="9"')+T(193,154,'GUTEN',34,C.white)+T(193,197,'APPETIT!',34,C.white);}
+function cinema(){let stars='';for(let i=0;i<20;i++)stars+=`<circle cx="${(i*113+214)%1430}" cy="${(i*47+139)%390}" r="${i%3+1}" fill="#ffffff" opacity=".4"/>`;
+ return R(0,0,1600,610,C.ink)+stars+R(125,60,1350,360,C.blue,'rx="18" stroke="#ffffff" stroke-width="13"')+
+ `<path d="M200 335Q645 83 1400 289L1400 393H200Z" fill="#a2b1bf" opacity=".6"/>`+
+ E(1140,213,81,81,C.white,'opacity=".7"')+E(1196,186,83,83,C.blue)+
+ T(205,130,'FILMABEND',38,C.white,'letter-spacing="5"')+
+ E(200,544,132,82,C.blue)+E(450,544,132,82,C.blue)+E(1170,544,132,82,C.blue)+E(1420,544,132,82,C.blue)+
+ R(0,535,1600,75,C.ink);}
+function garden(){return backgroundOutdoor()+
+ `<path d="M0 456C50 410 90 423 139 458M139 458C215 405 293 409 364 458" stroke="#4f829a" stroke-width="9" fill="none"/>`+
+  interactiveTree(270,439,1)+interactiveTree(1270,436,1.08)+
+ R(1072,386,301,20,C.ink,'rx="9"')+R(1090,349,265,35,C.blue,'rx="8"')+L(1112,403,1098,479,C.ink,12)+L(1340,403,1350,479,C.ink,12)+
+ E(110,460,12,12,C.white)+E(132,450,13,13,C.blue)+E(153,469,13,13,C.white)+
+ T(130,99,'EIN TAG IM GRÜNEN',26,C.blue,'letter-spacing="3"');}
+function course(){return backgroundIndoor()+
+ R(141,94,1014,289,C.ink,'rx="12"')+R(161,115,973,245,C.blue,'rx="3"')+
+ T(211,168,'MEDIEN- & NETZWERKTECHNIK',38,C.white,'letter-spacing="2"')+
+ R(214,208,400,13,C.silver,'rx="6"')+R(214,242,282,13,C.silver,'rx="6"')+R(214,276,343,13,C.white,'rx="6"')+
+ E(854,250,75,75,'none','stroke="#ffffff" stroke-width="13"')+E(854,250,36,36,C.white)+L(775,250,932,250,C.silver,7)+L(854,173,854,328,C.silver,7)+
+ R(1203,300,191,160,C.white,'rx="12" stroke="#4f829a" stroke-width="7"')+
+ T(1233,365,'NEUES',26,C.blue)+T(1233,404,'WISSEN',26,C.blue);}
+function memorial(){return backgroundOutdoor()+
+ E(790,273,270,182,C.white,'opacity=".45"')+
+ T(168,165,'100 JAHRE',67,C.blue,'letter-spacing="6"')+T(169,224,'IDEEN, MUT & NEUGIER',29,C.ink,'letter-spacing="2"')+
+ R(1160,291,230,164,C.white,'rx="15" stroke="#4f829a" stroke-width="9"')+T(1200,369,'100',75,C.blue)+T(1206,410,'JAHRE',24,C.ink,'letter-spacing="3"');}
+function sickRoom(){return bedroom('GUTE BESSERUNG')+R(133,139,260,120,C.white,'rx="10" stroke="#4f829a" stroke-width="6"')+
+ L(265,161,265,240,C.blue,22)+L(225,201,305,201,C.blue,22)+
+ R(1140,385,98,60,C.white,'rx="10"')+R(1174,352,30,38,C.blue,'rx="5"');}
+function landmark(d){const k=d?.symbol||'japan';if(k==='paris')return `<g transform="translate(1110 117)"><path d="M210 10L82 355H335Z" fill="none" stroke="#1d1d1b" stroke-width="19" stroke-linejoin="round"/><path d="M175 96H247M140 196H277M90 308H326" stroke="#4f829a" stroke-width="19"/><path d="M210 -12V10" stroke="#1d1d1b" stroke-width="13"/></g>`;
+ if(k==='japan')return `<g transform="translate(1120 100)">${L(214,0,214,342,C.ink,15)}<path d="M214 20L157 143L193 143L146 240H282L235 143H272Z" fill="#4f829a" stroke="#1d1d1b" stroke-width="10"/>${R(158,248,112,15,C.ink,'rx="5"')}${R(181,276,70,70,C.blue,'rx="5"')}${L(141,348,289,348,C.ink,13)}</g>`;
+ if(k==='cern')return `<g transform="translate(1100 100)">${E(210,217,180,127,'none','stroke="#1d1d1b" stroke-width="24"')}${E(210,217,133,90,'none','stroke="#ffffff" stroke-width="18"')}${E(210,217,77,50,C.blue,'opacity=".65"')}${T(127,229,'CERN',41,C.white)}${L(28,341,396,341,C.ink,12)}</g>`;
+ if(k==='sf')return `<g transform="translate(1040 155)">${L(10,290,480,290,C.ink,13)}${L(122,50,122,317,C.blue,25)}${L(376,50,376,317,C.blue,25)}<path d="M30 145Q248 385 473 145" fill="none" stroke="#4f829a" stroke-width="16"/>${L(122,50,376,50,C.ink,8)}${L(30,145,473,145,C.ink,10)}</g>`;
+ if(k==='singapore')return `<g transform="translate(1060 105)">${R(66,158,74,210,C.blue,'rx="12"')}${R(202,120,75,248,C.blue,'rx="12"')}${R(335,170,76,198,C.blue,'rx="12"')}<path d="M40 158Q250 24 447 156L435 187H54Z" fill="#ffffff" stroke="#1d1d1b" stroke-width="12"/>${L(34,374,445,374,C.ink,12)}</g>`;
+ if(k==='seoul')return `<g transform="translate(1100 87)"><path d="M190 10L244 355H139Z" fill="#4f829a" stroke="#1d1d1b" stroke-width="12"/>${R(126,120,130,25,C.ink,'rx="9"')}${R(115,154,148,35,C.white,'rx="12" stroke="#4f829a" stroke-width="9"')}${L(190,5,190,-55,C.ink,12)}${R(85,345,220,22,C.ink,'rx="5"')}</g>`;
+ if(k==='berlin')return `<g transform="translate(1100 50)">${L(214,20,214,419,C.ink,18)}${E(214,175,104,69,C.blue,'stroke="#1d1d1b" stroke-width="12"')}${E(214,176,84,49,C.white,'opacity=".5"')}${L(214,95,214,-4,C.ink,12)}${R(141,377,147,22,C.ink,'rx="5"')}${R(96,402,238,21,C.blue,'rx="5"')}</g>`;
+ if(k==='london')return `<g transform="translate(1165 75)">${R(124,80,165,310,C.blue,'stroke="#1d1d1b" stroke-width="12"')}${R(96,46,221,44,C.ink,'rx="4"')}${R(113,19,185,28,C.white,'rx="3"')}${E(207,151,62,62,C.white,'stroke="#1d1d1b" stroke-width="8"')}${L(207,151,207,115,C.ink,7)}${L(207,151,238,160,C.ink,7)}${L(207,13,207,-27,C.ink,12)}${R(69,387,272,18,C.ink,'rx="5"')}</g>`;
+ if(k==='dubai')return `<g transform="translate(1150 60)"><path d="M190 1L167 112H141L118 395H264L241 112H215Z" fill="#4f829a" stroke="#1d1d1b" stroke-width="12"/>${L(190,-20,190,3,C.ink,10)}${L(119,260,263,260,C.white,11)}${L(129,190,253,190,C.white,10)}${L(147,130,233,130,C.white,8)}</g>`;
+ return `<g transform="translate(1080 100)"><path d="M14 368L160 160L274 294L354 131L480 368Z" fill="#4f829a" stroke="#1d1d1b" stroke-width="11"/><path d="M100 243L160 160L215 238M314 210L354 131L397 210" fill="none" stroke="#ffffff" stroke-width="18"/>${E(214,380,180,19,C.ink,'opacity=".16"')}</g>`;
+}
+function travelScene(dest,night){return backgroundOutdoor(night)+
+ T(118,123,dest.country.toLocaleUpperCase('de-DE'),46,C.blue,'letter-spacing="4"')+
+ T(120,170,dest.city.toLocaleUpperCase('de-DE'),24,C.ink,'letter-spacing="2"')+
+ R(139,234,380,10,C.blue,'rx="5" opacity=".65"')+R(139,263,230,10,C.blue,'rx="5" opacity=".5"')+
+ landmark(dest);}
+function accessory(type){if(type==='book')return `<g transform="translate(143 -150) rotate(-19)">${R(-40,-31,77,62,C.white,'rx="5" stroke="#1d1d1b" stroke-width="6"')}${L(-3,-28,-3,27,C.ink,4)}${L(12,-13,28,-13,C.blue,3)}${L(12,0,27,0,C.blue,3)}</g>`;
+ if(type==='wrench')return `<g transform="translate(161 -141) rotate(24)">${L(0,-56,0,32,C.ink,13)}<path d="M-17 -70L-12 -42Q0 -32 12 -42L17 -70" stroke="#1d1d1b" stroke-width="15" fill="none" stroke-linecap="round"/>${E(0,24,5,5,C.white)}</g>`;
+ if(type==='laptop')return `<g transform="translate(142 -147) rotate(-8)">${R(-49,-36,95,66,C.ink,'rx="7"')}${R(-41,-28,79,47,C.blue,'rx="3"')}${T(-21,1,'</>',19,C.white)}${R(-62,29,123,11,C.silver,'rx="4"')}</g>`;
+ if(type==='backpack')return `<g transform="translate(-127 -176)">${R(-54,-17,51,93,C.blue,'rx="13" stroke="#1d1d1b" stroke-width="8"')}${R(-45,25,34,27,C.silver,'rx="5"')}</g>`;
+ if(type==='camera')return `<g transform="translate(157 -141) rotate(10)">${R(-43,-31,88,59,C.ink,'rx="9"')}${R(-23,-42,34,15,C.ink,'rx="3"')}${E(2,-3,19,19,C.silver,'stroke="#ffffff" stroke-width="7"')}${E(2,-3,8,8,C.blue)}</g>`;
+ if(type==='food')return `<g transform="translate(159 -145)">${E(0,4,41,15,C.white,'stroke="#1d1d1b" stroke-width="6"')}${E(0,3,24,7,C.silver)}${L(30,-35,31,2,C.ink,6)}</g>`;
+ if(type==='popcorn')return `<g transform="translate(153 -142)"><path d="M-32 -25H33L22 42H-21Z" fill="#ffffff" stroke="#1d1d1b" stroke-width="6"/>${L(-6,-15,-1,32,C.blue,10)}${L(13,-15,11,30,C.blue,7)}${E(-20,-28,16,13,C.white)}${E(5,-41,19,16,C.white)}${E(26,-27,16,13,C.white)}</g>`;
+ if(type==='thermometer')return `<g transform="translate(155 -143) rotate(15)">${R(-10,-52,20,80,C.white,'rx="10" stroke="#1d1d1b" stroke-width="5"')}${E(0,26,17,17,C.blue)}${L(0,-25,0,27,C.blue,7)}</g>`;
+ return '';}
+function character(age,mood,prop,scene,motion='rest'){
+ const scale=age<0?.45:age<3?.54:age<6?.69:age<12?.80:age<18?.91:age<22?.99:age<75?1:age<90?.98:.94;
+ let face='';
+ if(mood==='sleep')face=`<path d="M-75 -160q22 -24 45 0M21 -160q22 -24 45 0" stroke="#1d1d1b" stroke-width="9" fill="none" stroke-linecap="round"/>`;
+ else if(mood==='sick')face=E(-49,-158,9,13,C.ink)+E(46,-158,9,13,C.ink)+`<path d="M-26 -116Q0 -137 28 -116" stroke="#1d1d1b" stroke-width="8" fill="none" stroke-linecap="round"/>`;
+ else face=`<g class="eye-blink">${E(-51,-162,12,18,C.ink)}${E(47,-162,12,18,C.ink)}${E(-47,-168,4,5,C.white)}${E(51,-168,4,5,C.white)}</g>`;
+ if(mood==='happy'||mood==='excited')face+=`<path d="M-33 -123Q0 -87 36 -123" fill="none" stroke="#1d1d1b" stroke-width="9" stroke-linecap="round"/>`;
+ if(mood==='focus')face+=`<path d="M-21 -112Q0 -116 19 -112" fill="none" stroke="#1d1d1b" stroke-width="8" stroke-linecap="round"/>`;
+ if(mood==='sleep')face+=`<path d="M-9 -110q12 12 24 0" stroke="#1d1d1b" fill="none" stroke-width="6" stroke-linecap="round"/>`;
+ let glasses=age>=70||prop==='book'?`<g fill="none" stroke="#1d1d1b" stroke-width="6">${R(-87,-186,74,55,'none','rx="18"')}${R(10,-186,74,55,'none','rx="18"')}${L(-13,-165,10,-165,C.ink,6)}</g>`:'';
+ let hat=scene==='construction'?`<path d="M-102 -249Q-93 -305 -20 -315H20Q91 -304 102 -249Z" fill="#ffffff" stroke="#1d1d1b" stroke-width="9"/>${R(-119,-259,238,20,C.blue,'rx="9"')}`:'';
+ let eyebrows=mood==='sick'?`<path d="M-78 -189l34 12M37 -177l35 -12" fill="none" stroke="#1d1d1b" stroke-width="7"/>`:'';
+ let zzz=mood==='sleep'?`<g fill="#4f829a" font-family="system-ui,sans-serif" font-weight="900"><text class="zzz" x="107" y="-272" font-size="44">Z</text><text class="zzz two" x="146" y="-294" font-size="34">z</text><text class="zzz three" x="175" y="-316" font-size="23">z</text></g>`:'';
+ let senior=age>=84?`<path d="M-67 -103q65 18 131 0" fill="none" stroke="#ffffff" stroke-width="8" opacity=".65"/>`:'';
+ return `<g class="interactive-character" data-interact="character" role="button" tabindex="0" aria-label="Barthelome antippen" transform="translate(788 514) scale(${scale})"><g class="character-reaction"><g class="character-float figure action-${motion}">
+   ${E(0,42,170,25,C.ink,'opacity=".12"')}
+   <g transform="translate(-75 -74)"><g class="leg-left">${L(0,0,-10,104,C.ink,20)}${E(-33,108,43,17,C.ink)}</g></g>
+   <g transform="translate(73 -74)"><g class="leg-right">${L(0,0,8,104,C.ink,20)}${E(30,108,43,17,C.ink)}</g></g>
+   <g transform="translate(-128 -196)"><g class="arm-left"><path d="M0 0Q-46 -10 -56 40L-67 73" fill="none" stroke="#1d1d1b" stroke-width="20" stroke-linecap="round"/>${E(-69,77,17,17,C.white,'stroke="#1d1d1b" stroke-width="6"')}</g></g>
+   <g transform="translate(128 -196)"><g class="arm-right"><path d="M0 0Q48 -14 52 36L41 74" fill="none" stroke="#1d1d1b" stroke-width="20" stroke-linecap="round"/>${E(43,77,17,17,C.white,'stroke="#1d1d1b" stroke-width="6"')}</g></g>
+   ${L(-29,-271,-56,-308,C.ink,8)}${L(29,-271,57,-308,C.ink,8)}
+   ${E(-59,-311,13,13,C.blue,'class="antenna-light" stroke="#1d1d1b" stroke-width="5"')}${E(58,-310,13,13,C.blue,'class="antenna-light" stroke="#1d1d1b" stroke-width="5"')}
+   ${R(-142,-268,285,210,C.ink,'rx="33"')}
+   ${R(-134,-258,267,190,C.blue,'rx="29"')}
+   ${R(-113,-238,196,145,'url(#tvScreen)','rx="22" stroke="#ffffff" stroke-width="7"')}
+   ${R(-106,-231,182,130,'url(#screenlines)','rx="14"')}
+   <path class="screen-glow" d="M-100 -229H-20L-95 -106H-106V-215Z" fill="#ffffff" opacity=".12"/>
+   ${face}${eyebrows}${glasses}${senior}
+   <g class="chew-effect">${E(0,-115,22,13,C.ink)}${E(-6,-119,5,4,C.white)}</g>
+   ${E(110,-189,14,14,C.ink,'stroke="#a2b1bf" stroke-width="6"')}
+   ${E(110,-146,9,9,C.white)}
+   ${R(-40,-62,80,16,C.silver,'rx="8"')}
+   ${hat}<g class="held-object">${accessory(prop)}</g>${zzz}
+ </g></g><g class="shock-sign">${E(157,-296,37,40,C.white,'stroke="#1d1d1b" stroke-width="7"')}${T(145,-281,'!',45,C.blue)}</g>${R(-153,-336,312,402,'transparent','pointer-events="all"')}</g>`;
+}
+function actionArtwork(event,age){
+ const a=event.motion||'rest';
+ const scale=age<3?.54:age<6?.69:age<12?.80:age<18?.91:1;
+ if(a==='ball')return `<g transform="translate(788 514) scale(${scale})"><g class="tossed-ball">${E(0,0,26,26,C.blue,'stroke="#1d1d1b" stroke-width="6"')}${E(-8,-9,7,7,C.white)}<path d="M-15 -17Q0 0 15 17M-19 12Q0 -8 19 -10" fill="none" stroke="#ffffff" stroke-width="4"/></g></g>`;
+ if(a==='blocks'||a==='build')return `<g transform="translate(1090 465)">${L(-173,5,135,5,C.ink,5,'opacity=".3"')}<g class="stack-block block-one">${R(-29,-58,58,54,C.blue,'stroke="#1d1d1b" stroke-width="5"')}</g><g class="stack-block block-two">${R(-29,-116,58,54,C.white,'stroke="#1d1d1b" stroke-width="5"')}</g><g class="stack-block block-three">${R(-29,-174,58,54,C.silver,'stroke="#1d1d1b" stroke-width="5"')}</g></g>`;
+ if(a==='sing'||a==='dance')return `<g font-family="Georgia,serif" font-weight="bold" fill="${C.blue}"><text class="music-note" x="1030" y="367" font-size="67">♫</text><text class="music-note second" x="1114" y="311" font-size="44">♪</text><text class="music-note third" x="568" y="349" font-size="53">♫</text></g>`;
+ if(a==='train')return `<g transform="translate(1050 429)">${L(-160,28,230,28,C.ink,6)}${L(-160,44,230,44,C.ink,4)}<g class="toy-train">${R(-55,-32,138,56,C.blue,'rx="7" stroke="#1d1d1b" stroke-width="6"')}${R(-18,-73,53,42,C.white,'stroke="#1d1d1b" stroke-width="6"')}${R(65,-50,39,67,C.silver,'stroke="#1d1d1b" stroke-width="5"')}<g class="toy-wheel">${E(-16,29,17,17,C.ink)}${E(-16,29,6,6,C.white)}</g><g class="toy-wheel">${E(68,29,17,17,C.ink)}${E(68,29,6,6,C.white)}</g></g></g>`;
+ if(a==='draw'||a==='craft')return `<g transform="translate(1056 356)">${R(-90,0,223,123,C.white,'stroke="#1d1d1b" stroke-width="7" rx="5"')}<path class="sketch-line" d="M-45 83L-10 29L22 71L56 25L96 81" fill="none" stroke="${C.blue}" stroke-width="8" stroke-linejoin="round"/><g class="drawing-pen">${L(-25,1,1,82,C.ink,9)}${E(-28,-5,8,8,C.blue)}</g></g>`;
+ if(a==='puzzle')return `<g transform="translate(1092 361)">${R(-82,-10,183,119,C.white,'stroke="#1d1d1b" stroke-width="6"')}<path d="M-51 49h42q-10 -22 9 -22t8 22h42v45H-51Z" fill="${C.silver}" stroke="${C.ink}" stroke-width="5"/><g class="puzzle-piece"><path d="M-49 -1H4q-6 26 15 26t15 -26h38v40H-49Z" fill="${C.blue}" stroke="${C.ink}" stroke-width="5"/></g></g>`;
+ if(a==='garden')return `<g transform="translate(1100 369)">${L(50,-2,18,99,C.blue,11)}${E(2,36,43,19,C.blue,'transform="rotate(-30 2 36)"')}${R(8,-21,47,38,C.blue,'rx="6" stroke="#1d1d1b" stroke-width="6"')}${L(14,-20,80,-44,C.ink,8)}<path d="M52 4Q96 -12 95 13" fill="none" stroke="${C.ink}" stroke-width="7"/><circle class="plant-drop" cx="104" cy="25" r="7" fill="${C.blue}"/><circle class="plant-drop b" cx="121" cy="13" r="6" fill="${C.blue}"/><circle class="plant-drop c" cx="142" cy="22" r="6" fill="${C.blue}"/></g>`;
+ if(a==='science')return `<g transform="translate(1100 376)"><path d="M-30 -65H30M-15 -65v43L-65 66Q-70 82 -49 82H51Q70 82 65 66L15 -22v-43" fill="${C.silver}" stroke="${C.ink}" stroke-width="7"/><path d="M-47 46Q0 26 47 46L55 70H-56Z" fill="${C.blue}"/><circle class="lab-bubble" cx="-20" cy="15" r="8" fill="${C.white}"/><circle class="lab-bubble b" cx="6" cy="24" r="7" fill="${C.white}"/><circle class="lab-bubble c" cx="30" cy="8" r="5" fill="${C.white}"/></g>`;
+ if(a==='typing')return `<g transform="translate(1137 222)">${R(-20,-12,127,72,C.ink,'rx="6"')}${R(-12,-5,111,56,C.blue,'rx="3"')}${T(-2,24,'</>',25,C.white)}<g class="typing-caret">${R(71,25,9,19,C.white)}</g><g class="typing-keys">${R(-26,66,149,17,C.silver,'rx="5"')}</g></g>`;
+ if(a==='mount')return `<g transform="translate(1116 272)"><g class="device-hang">${R(-68,-33,179,112,C.ink,'rx="8"')}${R(-57,-24,157,89,C.silver,'rx="3"')}${R(-16,85,72,7,C.ink)}${L(16,82,16,98,C.ink,7)}</g>${L(-100,105,135,105,C.blue,5,'stroke-dasharray="10 8"')}</g>`;
+ if(a==='cable')return `<g transform="translate(1100 300)"><path d="M-120 138V70Q-120 20 -60 20H50Q104 20 104 -35" fill="none" stroke="${C.ink}" stroke-width="17" stroke-linecap="round"/><path class="cable-flow" d="M-120 138V70Q-120 20 -60 20H50Q104 20 104 -35" fill="none" stroke="${C.white}" stroke-width="6" stroke-linecap="round"/>${R(82,-66,47,39,C.blue,'rx="5" stroke="#1d1d1b" stroke-width="6"')}</g>`;
+ if(a==='repair')return `<g transform="translate(1089 396)"><g class="repair-gear"><path d="M0 -63L13 -50L29 -57L37 -40L55 -36L50 -16L65 0L50 16L55 36L37 40L29 57L13 50L0 63L-13 50L-29 57L-37 40L-55 36L-50 16L-65 0L-50 -16L-55 -36L-37 -40L-29 -57L-13 -50Z" fill="${C.blue}" stroke="${C.ink}" stroke-width="7"/>${E(0,0,22,22,C.white,'stroke="#1d1d1b" stroke-width="7"')}</g></g>`;
+ if(a==='film')return `<g transform="translate(1123 320)"><g class="film-reel">${E(0,0,88,88,C.ink)}${E(0,0,74,74,C.silver)}${[0,1,2,3,4].map(i=>{const angle=i*2*Math.PI/5;return E(Math.cos(angle)*42,Math.sin(angle)*42,18,18,C.ink)}).join('')}${E(0,0,14,14,C.blue)}</g><path class="film-light" d="M-95 0L-310 -128L-310 128Z" fill="${C.white}" opacity=".16"/></g>`;
+ if(a==='camera')return `<g transform="translate(1093 337)">${R(-68,-35,140,83,C.ink,'rx="13"')}${R(-28,-47,52,18,C.ink)}${E(5,6,35,35,C.silver,'stroke="#ffffff" stroke-width="8"')}${E(5,6,15,15,C.blue)}<circle class="flash" cx="-43" cy="-14" r="29" fill="${C.white}"/></g>`;
+ if(a==='meeting')return `<g transform="translate(1105 303)"><g class="talk-bubble">${R(-116,-54,132,74,C.white,'rx="18" stroke="#1d1d1b" stroke-width="7"')}${E(-83,-17,6,6,C.blue)}${E(-57,-17,6,6,C.blue)}${E(-31,-17,6,6,C.blue)}</g><g class="talk-bubble second">${R(39,-102,127,71,C.blue,'rx="17" stroke="#1d1d1b" stroke-width="7"')}${T(61,-52,'...',37,C.white)}</g></g>`;
+ if(a==='food'){
+  const scale=age<0?.45:age<3?.54:age<6?.69:age<12?.80:age<18?.91:age<22?.99:age<75?1:age<90?.98:.94;
+  const flyY=Math.round(514-115*scale-419);
+  return `<g class="interactive-food" data-interact="food" role="button" tabindex="0" aria-label="Barthelome etwas zu essen geben" transform="translate(1096 419)" style="--fly-x:-308px;--fly-mid:-154px;--fly-y:${flyY}px">${E(0,20,91,20,C.white,'stroke="#1d1d1b" stroke-width="6"')}${E(0,15,55,13,C.silver)}<g class="food-piece">${E(0,-20,47,27,C.white,'stroke="#1d1d1b" stroke-width="5"')}${E(-20,-24,13,10,C.blue)}${E(13,-31,16,11,C.silver)}${E(21,-15,12,9,C.blue)}${E(-7,-7,12,7,C.blue)}</g><path class="food-steam" d="M-28 -6q-15 -15 0 -31t0 -32" fill="none" stroke="${C.blue}" stroke-width="6"/><path class="food-steam second" d="M26 -8q-15 -15 0 -31t0 -32" fill="none" stroke="${C.blue}" stroke-width="6"/>${E(0,-11,96,77,'transparent','pointer-events="all"')}</g>`;
+ }
+ if(a==='study')return `<g transform="translate(1071 370)">${R(-75,-71,181,130,C.ink,'rx="5"')}${R(-66,-62,163,112,C.blue)}${T(-41,-7,'10101',29,C.white)}${L(-30,15,55,15,C.white,5)}<g class="drawing-pen">${L(-80,76,53,-16,C.silver,8)}</g></g>`;
+ if(a==='toys')return `<g transform="translate(1080 408)"><g class="repair-gear">${E(0,0,59,59,C.silver,'stroke="#1d1d1b" stroke-width="5"')}${R(-37,-37,74,74,C.blue,'rx="14"')}${E(0,0,12,12,C.white)}</g></g>`;
+ return '';
+}
+function rainyOverlay(hash){let drops='';for(let i=0;i<25;i++){let x=(i*157+hash%89)%1600,y=(i*71)%360;drops+=`<path class="raindrop" d="M${x} ${y}l-12 30" stroke="#ffffff" stroke-width="4" opacity=".55" style="animation-delay:-${(i*0.13).toFixed(2)}s"/>`}return drops}
+let weatherDays=null;
+let weatherFetchDay='';
+let weatherError=false;
+const WEATHER_URL='https://api.open-meteo.com/v1/forecast?latitude=51.0504&longitude=13.7373&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBerlin&forecast_days=3';
+function weatherIcon(code,x,y){
+ const sun=`<circle cx="${x}" cy="${y}" r="16" fill="${C.white}" stroke="${C.blue}" stroke-width="4"/>`;
+ const rays=Array.from({length:8},(_,i)=>{let a=i*Math.PI/4;return L(x+Math.cos(a)*23,y+Math.sin(a)*23,x+Math.cos(a)*29,y+Math.sin(a)*29,C.white,3)}).join('');
+ const cloud=`<path d="M${x-27} ${y+12}q-5 -16 13 -19q6 -21 26 -13q12 -3 19 12q13 4 10 18q-2 12 -17 12H${x-12}q-13 0 -15 -10Z" fill="${C.silver}" stroke="${C.ink}" stroke-width="3"/>`;
+ if(code===0)return sun+rays;
+ if(code===1||code===2)return sun+rays+cloud;
+ if(code===3||code===45||code===48)return cloud;
+ if(code>=71&&code<=77||code>=85&&code<=86)return cloud+T(x-17,y+39,'✳ ✳',16,C.blue);
+ if(code>=95)return cloud+`<path d="M${x+1} ${y+16}l-10 19h12l-6 17l23 -27h-14l8 -9Z" fill="${C.ink}"/>`;
+ return cloud+L(x-15,y+23,x-24,y+38,C.blue,4)+L(x+1,y+23,x-8,y+38,C.blue,4)+L(x+17,y+23,x+8,y+38,C.blue,4);
+}
+function weatherPicture(){
+ const x=664,y=28,w=366,h=163;
+ let out=R(x,y,w,h,C.ink,'rx="3"')+R(x+7,y+7,w-14,h-14,C.white)+
+ T(x+18,y+28,'WETTER  /  3 TAGE',17,C.ink,'font-family="Courier New,monospace" letter-spacing="1.5"');
+ out+=L(x+12,y+37,x+w-12,y+37,C.blue,2);
+ if(!weatherDays){out+=T(x+29,y+91,weatherError?'WETTER ZZT. NICHT VERFÜGBAR':'VORHERSAGE WIRD GELADEN',15,C.blue);return out;}
+ for(let i=0;i<3;i++){
+  const d=weatherDays[i];if(!d)continue;
+  const cx=x+68+i*116;
+  if(i)out+=L(x+14+i*116,y+47,x+14+i*116,y+149,C.silver,2);
+  out+=T(cx,y+55,['HEUTE','MORGEN','ÜBERM.'][i],14,C.ink,'text-anchor="middle" font-family="Courier New,monospace"');
+  out+=weatherIcon(d.code,cx,y+88);
+  out+=T(cx,y+140,`${Math.round(d.min)}° / ${Math.round(d.max)}°`,19,C.ink,'text-anchor="middle" font-family="Courier New,monospace"');
+ }
+ return out;
+}
+async function updateWeather(){
+ const currentDay=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ if(currentDay===weatherFetchDay)return;
+ weatherFetchDay=currentDay;
+ try{
+  const response=await fetch(WEATHER_URL,{cache:'no-store'});
+  if(!response.ok)throw new Error(`HTTP ${response.status}`);
+  const data=await response.json(),d=data.daily;
+  if(!d?.time||d.time.length<3)throw new Error('Unvollständige Wetterdaten');
+  weatherDays=d.time.slice(0,3).map((_,i)=>({code:d.weather_code[i],min:d.temperature_2m_min[i],max:d.temperature_2m_max[i]}));
+  weatherError=false;
+ }catch(error){console.warn('Wettervorhersage derzeit nicht verfügbar:',error);weatherDays=null;weatherError=true;weatherFetchDay='';}
+ lastStateKey='';update();
+}
+function drawScene(date,age,event){const hr=date.getHours(),night=hr<7||hr>=21;
+ let bg='',fg='',fore='';
+ switch(event.scene){
+ case 'sleep':bg=bedroom();fore=bedFront();break;
+ case 'sick':bg=sickRoom();fore=bedFront();break;
+ case 'nursery':bg=nursery();break;
+ case 'kindergarten':bg=kindergarten();break;
+ case 'school':bg=school();break;
+ case 'playground':bg=playground();break;
+ case 'construction':bg=construction();break;
+ case 'workshop':bg=workbench();break;
+ case 'coding':bg=coding();break;
+ case 'library':bg=library();break;
+ case 'kitchen':bg=kitchen();break;
+ case 'cinema':bg=cinema();break;
+ case 'garden':bg=garden();break;
+ case 'course':bg=course();break;
+ case 'memorial':bg=memorial();break;
+ case 'travel':bg=travelScene(event.destination,night);break;
+ default:bg=backgroundIndoor(night);
+ }
+ const indoor=['sleep','sick','nursery','kindergarten','school','construction','workshop','coding','library','kitchen','cinema','course','memorial'];
+ if(event.scene!=='memorial'){
+ if(['sleep','sick','nursery','kindergarten','school','coding','workshop','kitchen','course'].includes(event.scene))fg+=pottedPlant(1509,467,.72);
+ fg+=character(age,event.mood,event.prop,event.scene,event.motion);
+ fg+=actionArtwork(event,age);
+ }
+ const rain=(!indoor.includes(event.scene)&&dayHash(date)%13===0&&hr>=7&&hr<21)?rainyOverlay(dayHash(date)):'';
+ return defs+bg+(indoor.includes(event.scene)&&event.scene!=='cinema'&&event.scene!=='memorial'?weatherPicture():'')+fg+fore+rain;
+}
+const reactionTimers=new WeakMap();
+function reactOnce(node,className,duration){
+ const old=reactionTimers.get(node);
+ if(old)clearTimeout(old);
+ node.classList.remove(className);
+ void node.getBoundingClientRect();
+ node.classList.add(className);
+ reactionTimers.set(node,setTimeout(()=>node.classList.remove(className),duration));
+}
+function interact(node){
+ const type=node.dataset.interact;
+ const speak=message=>{$('interactionStatus').textContent=message;};
+ switch(type){
+  case 'character':
+   reactOnce(node,'is-startled',970);
+   speak('Huch! Barthelome hüpft erschrocken hoch.');
+   break;
+  case 'tree':
+   reactOnce(node,'is-rustling',1320);
+   speak('Die Blätter rascheln.');
+   break;
+  case 'plant':
+   reactOnce(node,'is-rustling',1120);
+   speak('Die Pflanze wackelt ein wenig.');
+   break;
+  case 'cloud':
+   reactOnce(node,'is-puffed',1240);
+   speak('Die Wolke plustert sich auf.');
+   break;
+  case 'window':
+   reactOnce(node,'is-peeking',1700);
+   speak('Das Rollo fährt kurz herunter und wieder hoch.');
+   break;
+  case 'tv':
+   reactOnce(node,'is-testing',2290);
+   speak('Der Fernseher zeigt kurz ein Testbild.');
+   break;
+  case 'food':
+   if(node.classList.contains('is-feeding'))return;
+   node.classList.add('is-feeding');
+   speak('Das Essen fliegt zu Barthelome. Guten Appetit!');
+   setTimeout(()=>{
+    if(!node.isConnected)return;
+    const character=$('scene').querySelector('.interactive-character');
+    if(character)reactOnce(character,'is-chewing',1150);
+   },830);
+   setTimeout(()=>node.classList.remove('is-feeding'),3850);
+   break;
+ }
+}
+const sceneElement=$('scene');
+sceneElement.addEventListener('click',event=>{
+ const node=event.target.closest?.('[data-interact]');
+ if(node&&sceneElement.contains(node))interact(node);
+});
+sceneElement.addEventListener('keydown',event=>{
+ if(event.key!=='Enter'&&event.key!==' ')return;
+ const node=event.target.closest?.('[data-interact]');
+ if(!node||!sceneElement.contains(node))return;
+ event.preventDefault();
+ interact(node);
+});
+let lastStateKey='';
+function fitHeadline(){
+ const el=$('activity');el.style.fontSize='';
+ const max=parseFloat(getComputedStyle(el).fontSize);let px=max;
+ while(el.scrollWidth>el.clientWidth+2&&px>max*.51){px-=1;el.style.fontSize=`${px}px`;}
+}
+function update(){const now=new Date(),age=daysSinceBirth(now),activity=resolveActivity(now,age);
+ $('time').textContent=now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+ $('date').textContent=now.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ const key=[age,activity.title,activity.scene,activity.place,activity.mood,activity.prop,activity.motion,activity.number].join('|');
+ if(key===lastStateKey)return;lastStateKey=key;
+ $('activity').textContent=activity.title;
+ fitHeadline();
+ $('age').textContent=age<0?'Noch nicht geboren':age>=LEBENSJAHRE?'100 Lebensjahre':age===1?'1 Jahr alt':`${age} Jahre alt`;
+ $('phase').textContent=phaseFor(age);
+ $('place').textContent=activity.place;
+ $('detail').textContent=activity.detail;
+ const capped=Math.max(0,Math.min(LEBENSJAHRE,age));
+ $('progress').style.width=`${capped}%`;
+ $('marker').style.left=`${capped}%`;
+ $('progressLabel').textContent=`Jahr ${capped} von ${LEBENSJAHRE}`;
+ $('scene').innerHTML=drawScene(now,age,activity);
+ $('scene').setAttribute('aria-label',`Barthelome ist ${age} Jahre alt und ${activity.title.toLocaleLowerCase('de-DE')}. Standort: ${activity.place}. Einige Dinge lassen sich anklicken.`);
+}
+update();updateWeather();setInterval(update,1000);setInterval(updateWeather,60*60*1000);window.addEventListener('resize',()=>{lastStateKey='';update()});
+</script>
+</body>
+</html>
